@@ -7,16 +7,19 @@
 
 #include <set>
 #include <vector>
+#include <memory>
 
 #include "Channel.h"
-#include "EventLoop.h"
-#include "Timer.h"
-#include "TimerId.h"
 #include "Timestamp.h"
+#include "Callbacks.h"
 
 using namespace muduo;
 
 namespace chaonet {
+
+class EventLoop;
+class Timer;
+class TimerId;
 
 class TimerQueue {
    public:
@@ -26,14 +29,16 @@ class TimerQueue {
     TimerId addTimer(const TimerCallback& cb, Timestamp when, double interval);
 
    private:
-    typedef std::pair<Timestamp, Timer*> Entry;
+    typedef std::shared_ptr<Timer> TimerPtr;
+    typedef std::pair<Timestamp, TimerPtr> Entry;
     typedef std::set<Entry> TimerList;
 
+    void addTimerInLoop(TimerPtr timer);
     void handleRead();
     std::vector<Entry> getExpired(Timestamp now);
     void reset(const std::vector<Entry>& expired, Timestamp now);
 
-    bool insert(Timer* timer);
+    bool insert(TimerPtr timer);
 
     EventLoop* loop_;
     const int timerfd_;

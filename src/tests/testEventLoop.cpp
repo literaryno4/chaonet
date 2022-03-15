@@ -103,12 +103,30 @@ void test5() {
     sleep(1);
 }
 
+void print1() {
+    printf("yahaha");
+    g_loop->quit();
+}
+
+void threadFunc() {
+    g_loop->runAfter(1.0, print1);
+}
+
+void test6() {
+    chaonet::EventLoop loop;
+    g_loop = &loop;
+    muduo::Thread t(threadFunc);
+    t.start();
+    loop.loop();
+}
+
 int main() {
 //    test1();
 //    test2();
 //    test3();
 //    test4();
-    test5();
+//    test5();
+    test6();
 
     return 0;
 }

@@ -8,10 +8,9 @@
 #include <functional>
 
 #include "Timestamp.h"
+#include "Callbacks.h"
 
 namespace chaonet {
-
-typedef std::function<void()> TimerCallback;
 
 class Timer {
    public:
