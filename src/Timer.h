@@ -8,12 +8,13 @@
 #include <functional>
 
 #include "Timestamp.h"
-#include "Callbacks.h"
 
 namespace chaonet {
 
 class Timer {
    public:
+    typedef std::function<void()> TimerCallback;
+
     Timer(const TimerCallback& cb, muduo::Timestamp when, double interval)
         : callback_(cb),
           expiration_(when),

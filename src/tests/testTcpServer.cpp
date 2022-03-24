@@ -1,0 +1,68 @@
+//
+// Created by chao on 2022/3/16.
+//
+
+#include <stdio.h>
+#include <unistd.h>
+
+#include "TcpServer.h"
+#include "EventLoop.h"
+
+void onConnection(const chaonet::TcpConnectionPtr& conn) {
+    if (conn->connected()) {
+        printf("onConnection(): new connection [%s] from %s\n",
+               conn->name().c_str(), conn->peerAddress().toHostPort().c_str());
+    } else {
+        printf("onConnection(): connection [%s] is down\n",
+               conn->name().c_str());
+    }
+}
+
+void onConnectionSend(const chaonet::TcpConnectionPtr& conn) {
+    if (conn->connected()) {
+        printf("onConnectionSend(): new connection [%s] from %s\n",
+               conn->name().c_str(), conn->peerAddress().toHostPort().c_str());
+        ::sleep(5);
+        conn->send("yahaha");
+        conn->send("yahaha");
+        conn->shutdown();
+    } else {
+        printf("onConnection(): connection [%s] is down\n",
+               conn->name().c_str());
+    }
+}
+
+void onMessage(const chaonet::TcpConnectionPtr& conn, chaonet::Buffer* buf,
+               muduo::Timestamp receiveTime) {
+    printf("onMessage(): received %zd bytes from connection [%s] at %s\n", buf->readableBytes(),
+           conn->name().c_str(), receiveTime.toFormattedString().c_str());
+    printf("onMessage(): [%s]\n", buf->retrieveAsString().c_str());
+}
+
+void onMessageSend(const chaonet::TcpConnectionPtr& conn, chaonet::Buffer* buf,
+               muduo::Timestamp receiveTime) {
+    printf("onMessage(): received %zd bytes from connection [%s] at %s\n", buf->readableBytes(),
+           conn->name().c_str(), receiveTime.toFormattedString().c_str());
+    conn->send(buf->retrieveAsString());
+}
+
+void test1() {
+    printf("main(): pid = %d\n", getpid());
+    chaonet::InetAddress listenAddr(9981);
+    chaonet::EventLoop loop;
+
+    chaonet::TcpServer server(&loop, listenAddr);
+//    server.setConnectionCallback(onConnection);
+    server.setConnectionCallback(onConnectionSend);
+//    server.setMessageCallback(onMessage);
+    server.setMessageCallback(onMessageSend);
+    server.start();
+
+    loop.loop();
+}
+
+int main() {
+    test1();
+
+    return 0;
+};

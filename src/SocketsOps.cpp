@@ -110,6 +110,12 @@ void sockets::close(int sockfd) {
     }
 }
 
+void sockets::shutdownWrite(int sockfd) {
+    if (::shutdown(sockfd, SHUT_WR) < 0) {
+        LOG_SYSERR << "sockets::shutdownWrite";
+    }
+}
+
 void sockets::toHostPort(char* buf, size_t size,
                          const struct sockaddr_in& addr) {
     char host[INET_ADDRSTRLEN] = "INVALID";
@@ -124,5 +130,25 @@ void sockets::fromHostPort(const char* ip, uint16_t port,
     addr->sin_port = hostToNetwork16(port);
     if (::inet_pton(AF_INET, ip, &addr->sin_addr)) {
         LOG_SYSERR << "sockets::fromHostPort";
+    }
+}
+
+struct sockaddr_in sockets::getLocalAddr(int sockfd) {
+    struct sockaddr_in localaddr;
+    bzero(&localaddr, sizeof localaddr);
+    socklen_t addrlen = sizeof(localaddr);
+    if (::getsockname(sockfd, sockaddr_cast(&localaddr), &addrlen) < 0) {
+        LOG_SYSERR << "sockets::getLocalAddr";
+    }
+    return localaddr;
+}
+
+int sockets::getSocketError(int sockfd) {
+    int optval;
+    socklen_t optlen = sizeof(optval);
+    if (::getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
+        return errno;
+    } else {
+        return optval;
     }
 }

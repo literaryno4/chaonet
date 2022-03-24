@@ -8,6 +8,7 @@
 
 #include <sstream>
 
+#include <assert.h>
 #include <sys/poll.h>
 
 using namespace chaonet;
@@ -23,11 +24,21 @@ void Channel::update() {
     loop_->updateChannel(this);
 }
 
-void Channel::handleEvent() {
+Channel::~Channel() {
+    assert(!eventHandling);
+
+}
+
+void Channel::handleEvent(muduo::Timestamp receiveTime) {
+    eventHandling = true;
     if (revents_ & POLLNVAL) {
         LOG_WARN << "Channel::handle_event() POLLNVAL";
     }
 
+    if ((revents_ & POLLHUP) && !(revents_ & POLLIN)) {
+        LOG_WARN << " Channel::handleEvent() POLLHUP";
+        if (closeCallback_) closeCallback_();
+    }
     if (revents_ & (POLLERR | POLLNVAL)) {
         if (errorCallback_) {
             errorCallback_();
@@ -35,7 +46,7 @@ void Channel::handleEvent() {
     }
     if (revents_ & (POLLIN | POLLPRI | POLLRDHUP)) {
         if (readCallback_) {
-            readCallback_();
+            readCallback_(receiveTime);
         }
     }
     if (revents_ & POLLOUT) {
@@ -43,4 +54,5 @@ void Channel::handleEvent() {
             writeCallback_();
         }
     }
+    eventHandling = false;
 }

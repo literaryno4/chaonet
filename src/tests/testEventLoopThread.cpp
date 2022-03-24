@@ -2,16 +2,19 @@
 // Created by chao on 2022/3/15.
 //
 
-#include "../EventLoop.h"
-#include "../EventLoopThread.h"
 #include <stdio.h>
 
+#include "EventLoop.h"
+#include "EventLoopThread.h"
+
 void runInThread() {
-    printf("runInThread(): pid = %d, tid = %d\n", getpid(), muduo::CurrentThread::tid());
+    printf("runInThread(): pid = %d, tid = %d\n", getpid(),
+           muduo::CurrentThread::tid());
 }
 
 int main() {
-    printf("main(): pid = %d, tid = %d\n", getpid(), muduo::CurrentThread::tid());
+    printf("main(): pid = %d, tid = %d\n", getpid(),
+           muduo::CurrentThread::tid());
     chaonet::EventLoopThread loopThread;
     chaonet::EventLoop* loop = loopThread.startLoop();
     loop->runInLoop(runInThread);

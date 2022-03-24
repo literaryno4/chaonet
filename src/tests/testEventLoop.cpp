@@ -1,16 +1,15 @@
 //
 // Created by chao on 2022/3/13.
 //
-#include "../EventLoop.h"
-#include "../Channel.h"
-#include "../Poller.h"
-
-#include "Thread.h"
-#include "CurrentThread.h"
-
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/timerfd.h>
+#include <unistd.h>
+
+#include "Channel.h"
+#include "CurrentThread.h"
+#include "EventLoop.h"
+#include "Poller.h"
+#include "Thread.h"
 
 chaonet::EventLoop* g_loop;
 int cnt = 0;
@@ -28,23 +27,23 @@ void print(const char* msg) {
 }
 
 void threadFunc1() {
-    printf("threadFunc(): pid = %d, tid = %d\n", getpid(), muduo::CurrentThread::tid());
+    printf("threadFunc(): pid = %d, tid = %d\n", getpid(),
+           muduo::CurrentThread::tid());
 
     chaonet::EventLoop loop;
     loop.loop();
 }
 
-void threadFunc2() {
-    g_loop->loop();
-}
+void threadFunc2() { g_loop->loop(); }
 
-void timeout() {
+void timeout(muduo::Timestamp) {
     printf("Timeout!\n");
     g_loop->quit();
 }
 
 void test1() {
-    printf("main(): pid = %d, tid = %d\n", getpid(), muduo::CurrentThread::tid());
+    printf("main(): pid = %d, tid = %d\n", getpid(),
+           muduo::CurrentThread::tid());
     chaonet::EventLoop loop;
     muduo::Thread thread(threadFunc1);
     thread.start();
@@ -108,9 +107,7 @@ void print1() {
     g_loop->quit();
 }
 
-void threadFunc() {
-    g_loop->runAfter(1.0, print1);
-}
+void threadFunc() { g_loop->runAfter(1.0, print1); }
 
 void test6() {
     chaonet::EventLoop loop;
@@ -121,14 +118,12 @@ void test6() {
 }
 
 int main() {
-//    test1();
-//    test2();
-//    test3();
-//    test4();
-//    test5();
+    //    test1();
+    //    test2();
+    //    test3();
+    //    test4();
+    //    test5();
     test6();
 
     return 0;
 }
-
-

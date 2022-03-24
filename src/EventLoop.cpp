@@ -7,6 +7,7 @@
 #include <sys/eventfd.h>
 #include <sys/poll.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <cassert>
 
@@ -17,6 +18,15 @@
 #include "TimerQueue.h"
 
 using namespace chaonet;
+
+class IgnoreSigPipe {
+   public:
+    IgnoreSigPipe() {
+        ::signal(SIGPIPE, SIG_IGN);
+    }
+};
+
+IgnoreSigPipe initObj;
 
 __thread EventLoop *t_loopInThisThread = nullptr;
 const int kPollTimeMs = 10000;
@@ -65,8 +75,8 @@ void EventLoop::loop() {
     while (!quit_) {
         activeChannels_.clear();
         pollReturnTimer_ = poller_->poll(kPollTimeMs, &activeChannels_);
-        for (auto & activeChannel : activeChannels_) {
-            activeChannel->handleEvent();
+        for (auto &activeChannel : activeChannels_) {
+            activeChannel->handleEvent(pollReturnTimer_);
         }
         doPendingFunctors();
     }
@@ -75,7 +85,8 @@ void EventLoop::loop() {
     looping_ = false;
 }
 
-void EventLoop::quit() { quit_ = true;
+void EventLoop::quit() {
+    quit_ = true;
     if (!isInLoopThread()) {
         wakeup();
     }
@@ -119,6 +130,12 @@ void EventLoop::updateChannel(Channel *channel) {
     poller_->updateChannel(channel);
 }
 
+void EventLoop::removeChannel(Channel *channel) {
+    assert(channel->ownerLoop() == this);
+    assertInLoopThread();
+    poller_->removeChannel(channel);
+}
+
 void EventLoop::abortNotInLoopThread() {
     LOG_FATAL << "EventLoop::abortNotInLoopThread - EventLoop " << this
               << " was created in threadId_ = " << threadId_
@@ -129,7 +146,8 @@ void EventLoop::wakeup() const {
     uint64_t one = 1;
     ssize_t n = ::write(wakeupFd_, &one, sizeof one);
     if (n != sizeof(one)) {
-        LOG_ERROR << "EventLoop::handleRead() reads " << n << "bytes instead of 8";
+        LOG_ERROR << "EventLoop::handleRead() reads " << n
+                  << "bytes instead of 8";
     }
 }
 
@@ -137,7 +155,8 @@ void EventLoop::handleRead() const {
     uint64_t one = 1;
     ssize_t n = ::read(wakeupFd_, &one, sizeof(one));
     if (n != sizeof(one)) {
-        LOG_ERROR << "EventLoop::handleRead() read " << n << " bytes instead of 8";
+        LOG_ERROR << "EventLoop::handleRead() read " << n
+                  << " bytes instead of 8";
     }
 }
 
@@ -150,7 +169,7 @@ void EventLoop::doPendingFunctors() {
         functors.swap(pendingFunctors_);
     }
 
-    for (auto & functor : functors) {
+    for (auto &functor : functors) {
         functor();
     }
     callingPendingFunctors_ = false;

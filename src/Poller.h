@@ -8,9 +8,8 @@
 #include <map>
 #include <vector>
 
-#include "Timestamp.h"
-
 #include "EventLoop.h"
+#include "Timestamp.h"
 
 struct pollfd;
 
@@ -27,8 +26,9 @@ class Poller {
 
     muduo::Timestamp poll(int timeoutMs, ChannelList* activeChannels);
     void updateChannel(Channel* channel);
+    void removeChannel(Channel* channel);
 
-    void assertInLoopThread() { ownerLoop_->assertInLoopThread();}
+    void assertInLoopThread() { ownerLoop_->assertInLoopThread(); }
 
    private:
     void fillActiveChannels(int numEvents, ChannelList* activeChannels) const;

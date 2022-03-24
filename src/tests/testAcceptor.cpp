@@ -2,15 +2,16 @@
 // Created by chao on 2022/3/15.
 //
 
-#include "../Acceptor.h"
-#include "../InetAddress.h"
-#include "../EventLoop.h"
-#include "../InetAddress.h"
-#include "../SocketsOps.h"
-#include <stdio.h>
+#include <unistd.h>
+
+#include "Acceptor.h"
+#include "EventLoop.h"
+#include "InetAddress.h"
+#include "SocketsOps.h"
 
 void newConnection(int sockfd, const chaonet::InetAddress& peerAddr) {
-    printf("newConnection(): accepted a new connection from %s\n", peerAddr.toHostPort().c_str());
+    printf("newConnection(): accepted a new connection from %s\n",
+           peerAddr.toHostPort().c_str());
     ::write(sockfd, "How are you?\n", 13);
     chaonet::sockets::close(sockfd);
 }

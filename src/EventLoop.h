@@ -5,16 +5,15 @@
 #ifndef CHAONET_EVENTLOOP_H
 #define CHAONET_EVENTLOOP_H
 
-#include <vector>
 #include <mutex>
+#include <vector>
+#include <iostream>
 
 #include "CurrentThread.h"
 #include "Thread.h"
-#include "Timestamp.h"
 #include "TimerId.h"
+#include "Timestamp.h"
 #include "Callbacks.h"
-
-using namespace muduo;
 
 namespace chaonet {
 
@@ -33,19 +32,20 @@ class EventLoop {
 
     void quit();
 
-    Timestamp pollReturnTime() const { return pollReturnTimer_;}
+    muduo::Timestamp pollReturnTime() const { return pollReturnTimer_; }
 
     void runInLoop(const Functor& cb);
 
     void queueInLoop(const Functor& cb);
 
-    TimerId runAt(const Timestamp& time, const TimerCallback& cb);
+    TimerId runAt(const muduo::Timestamp& time, const TimerCallback& cb);
     TimerId runAfter(double delay, const TimerCallback& cb);
     TimerId runEvery(double interval, const TimerCallback& cb);
 
     void wakeup() const;
 
     void updateChannel(Channel* channel);
+    void removeChannel(Channel* channel);
 
     void assertInLoopThread() {
         if (!isInLoopThread()) {
@@ -68,7 +68,7 @@ class EventLoop {
     bool quit_;
     bool callingPendingFunctors_;
     const pid_t threadId_;
-    Timestamp pollReturnTimer_;
+    muduo::Timestamp pollReturnTimer_;
     std::unique_ptr<Poller> poller_;
     std::unique_ptr<TimerQueue> timerQueue_;
 
