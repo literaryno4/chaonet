@@ -38,6 +38,9 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     void setMessageCallback(const MessageCallback& cb) {
         messageCallback_ = cb;
     }
+    void setWriteCompleteCallback(const WriteCompleteCallback& cb) {
+        writeCompleteCallback_ = cb;
+    }
     void setCloseCallback(const CloseCallback& cb) { closeCallback_ = cb; }
 
     void connectionEstablished();
@@ -45,6 +48,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
     void send(const std::string& message);
     void shutdown();
+    void setTcpNoDelay(bool on);
 
    private:
     enum class StateE {
@@ -71,6 +75,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     InetAddress peerAddr_;
     ConnectionCallback connectionCallback_;
     MessageCallback messageCallback_;
+    WriteCompleteCallback writeCompleteCallback_;
     CloseCallback closeCallback_;
 
     Buffer inputBuffer_;

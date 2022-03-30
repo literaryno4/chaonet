@@ -23,7 +23,7 @@ void onConnectionSend(const chaonet::TcpConnectionPtr& conn) {
         printf("onConnectionSend(): new connection [%s] from %s\n",
                conn->name().c_str(), conn->peerAddress().toHostPort().c_str());
         ::sleep(5);
-        conn->send("yahaha");
+        conn->send("yahaha\n");
         conn->send("yahaha");
         conn->shutdown();
     } else {
@@ -46,23 +46,42 @@ void onMessageSend(const chaonet::TcpConnectionPtr& conn, chaonet::Buffer* buf,
     conn->send(buf->retrieveAsString());
 }
 
+void onWriteComplete(const chaonet::TcpConnectionPtr& conn) {
+    conn->send("write complete\n");
+}
+
 void test1() {
     printf("main(): pid = %d\n", getpid());
     chaonet::InetAddress listenAddr(9981);
     chaonet::EventLoop loop;
 
     chaonet::TcpServer server(&loop, listenAddr);
-//    server.setConnectionCallback(onConnection);
-    server.setConnectionCallback(onConnectionSend);
+    server.setConnectionCallback(onConnection);
+//    server.setConnectionCallback(onConnectionSend);
 //    server.setMessageCallback(onMessage);
     server.setMessageCallback(onMessageSend);
+    server.setWriteCompleteCallback(onWriteComplete);
+    server.start();
+
+    loop.loop();
+}
+
+void test2(int threadNum) {
+    printf("main(): pid = %d\n", getpid());
+    chaonet::InetAddress listenAddr(9981);
+    chaonet::EventLoop loop;
+
+    chaonet::TcpServer server(&loop, listenAddr);
+    server.setConnectionCallback(onConnection);
+    server.setMessageCallback(onMessageSend);
+    server.setThreadNum(threadNum);
     server.start();
 
     loop.loop();
 }
 
 int main() {
-    test1();
+    test2(5);
 
     return 0;
 };

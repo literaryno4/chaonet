@@ -23,6 +23,7 @@ class Socket {
     int accept(InetAddress* peeraddr);
     void setReuseAddr(bool on);
     void shutdownWrite();
+    void setTcpNoDelay(bool on);
 
    private:
     const int sockfd_;

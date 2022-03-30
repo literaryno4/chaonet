@@ -8,9 +8,9 @@
 #include <mutex>
 #include <vector>
 #include <iostream>
+#include <sys/types.h>
+#include <sys/syscall.h>
 
-#include "CurrentThread.h"
-#include "Thread.h"
 #include "TimerId.h"
 #include "Timestamp.h"
 #include "Callbacks.h"
@@ -26,6 +26,7 @@ class EventLoop {
     typedef std::function<void()> Functor;
     EventLoop();
     EventLoop(const EventLoop&) = delete;
+    EventLoop& operator=(const EventLoop&) = delete;
     ~EventLoop();
 
     void loop();
@@ -54,7 +55,7 @@ class EventLoop {
     }
 
     bool isInLoopThread() const {
-        return threadId_ == muduo::CurrentThread::tid();
+      return threadId_ == ::syscall(SYS_gettid);
     }
 
    private:

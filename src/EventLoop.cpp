@@ -12,7 +12,6 @@
 #include <cassert>
 
 #include "Channel.h"
-#include "CurrentThread.h"
 #include "Logging.h"
 #include "Poller.h"
 #include "TimerQueue.h"
@@ -26,7 +25,7 @@ class IgnoreSigPipe {
     }
 };
 
-IgnoreSigPipe initObj;
+//IgnoreSigPipe initObj;
 
 __thread EventLoop *t_loopInThisThread = nullptr;
 const int kPollTimeMs = 10000;
@@ -44,7 +43,7 @@ EventLoop::EventLoop()
     : looping_(false),
       quit_(false),
       callingPendingFunctors_(false),
-      threadId_(CurrentThread::tid()),
+      threadId_(::syscall(SYS_gettid)),
       poller_(new Poller(this)),
       timerQueue_(new TimerQueue(this)),
       wakeupFd_(createEventfd()),
@@ -139,7 +138,7 @@ void EventLoop::removeChannel(Channel *channel) {
 void EventLoop::abortNotInLoopThread() {
     LOG_FATAL << "EventLoop::abortNotInLoopThread - EventLoop " << this
               << " was created in threadId_ = " << threadId_
-              << ", current thread id = " << CurrentThread::tid();
+              << ", current thread id = " << ::syscall(SYS_gettid);
 }
 
 void EventLoop::wakeup() const {
