@@ -19,7 +19,7 @@ class Socket;
 
 class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
    public:
-    typedef std::function<void(const TcpConnectionPtr&)> CloseCallback;
+//    typedef std::function<void(const TcpConnectionPtr&)> CloseCallback;
 
     TcpConnection(EventLoop* loop, const std::string& name, int sockfd,
                   const InetAddress& localAddr, const InetAddress& peerAddr);

@@ -24,7 +24,7 @@ class EventLoopThread {
     void threadFunc();
     EventLoop* loop_;
     bool exiting_;
-    muduo::Thread thread_;
+    Thread thread_;
     std::mutex mutex_;
     std::condition_variable cond_;
 };

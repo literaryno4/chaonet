@@ -9,7 +9,6 @@
 #include "EventLoop.h"
 
 using namespace chaonet;
-using namespace muduo;
 
 EventLoopThread::EventLoopThread()
     : loop_(nullptr),
