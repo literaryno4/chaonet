@@ -9,7 +9,6 @@
 
 #include <memory>
 
-#include "Logging.h"
 #include "SocketsOps.h"
 
 using namespace chaonet;

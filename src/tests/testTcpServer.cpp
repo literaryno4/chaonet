@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <spdlog/spdlog.h>
 
 #include "TcpServer.h"
 #include "EventLoop.h"
@@ -81,6 +82,7 @@ void test2(int threadNum) {
 }
 
 int main() {
+    spdlog::set_level(spdlog::level::debug);
     test2(5);
 
     return 0;

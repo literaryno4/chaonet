@@ -8,25 +8,23 @@
 
 #include "Channel.h"
 #include "EventLoop.h"
-#include "Logging.h"
 #include "Socket.h"
 #include "SocketsOps.h"
+#include "tools.h"
 
-using namespace muduo;
 using namespace chaonet;
 
 TcpConnection::TcpConnection(EventLoop *loop, const std::string &name,
                              int sockfd, const InetAddress &localAddr,
                              const InetAddress &peerAddr)
-    : loop_(CHECK_NOTNULL(loop)),
+    : loop_(checkNotNUll(loop)),
       name_(name),
       state_(StateE::kConnecting),
       socket_(new Socket(sockfd)),
       channel_(new Channel(loop, sockfd)),
       localAddr_(localAddr),
       peerAddr_(peerAddr) {
-    LOG_DEBUG << "TcpConnection::ctor[" << name_ << "] at " << this
-              << " fd=" << sockfd;
+    SPDLOG_DEBUG("TcpConnection::constructor[{}],  fd=", name_, sockfd);
     channel_->setReadCallback(
         std::bind(&TcpConnection::handleRead, this, std::placeholders::_1));
     channel_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
@@ -35,8 +33,7 @@ TcpConnection::TcpConnection(EventLoop *loop, const std::string &name,
 }
 
 TcpConnection::~TcpConnection() {
-    LOG_DEBUG << "TcpConnection::dtor[" << name_ << "] at " << this
-              << " fd=" << channel_->fd();
+    SPDLOG_DEBUG("TcpConnection::dtor[{}], fd={}", name_, channel_->fd());
 }
 
 void TcpConnection::send(const std::string &message) {
@@ -57,7 +54,7 @@ void TcpConnection::sendInLoop(const std::string &message) {
         nwrote = ::write(channel_->fd(), message.data(), message.size());
         if (nwrote >= 0) {
             if (static_cast<size_t>(nwrote) < message.size()) {
-                LOG_TRACE << "I am going to write more data";
+                SPDLOG_TRACE("I am going to write more data");
             } else if (writeCompleteCallback_) {
                 loop_->queueInLoop(
                     std::bind(writeCompleteCallback_, shared_from_this()));
@@ -65,7 +62,7 @@ void TcpConnection::sendInLoop(const std::string &message) {
         } else {
             nwrote = 0;
             if (errno != EWOULDBLOCK) {
-                LOG_SYSERR << "TcpConnection::sendInLoop";
+                SPDLOG_ERROR("TcpConnection::sendInLoop");
             }
         }
     }
@@ -140,26 +137,26 @@ void TcpConnection::handleWrite() {
                     shutdownInLoop();
                 }
             } else {
-                LOG_TRACE << "I am going to write more data";
+                SPDLOG_TRACE("I am going to write more data");
             }
         } else {
-            LOG_SYSERR << "TcpConnection::handleWrite";
+            SPDLOG_ERROR("TcpConnection::handleWrite");
         }
     } else {
-        LOG_TRACE << "Connection is down, no more writing";
+        SPDLOG_TRACE("Connection is down, no more writing");
     }
 }
 
 void TcpConnection::handleClose() {
     loop_->assertInLoopThread();
-    LOG_TRACE << "TcpConnection::handleClose state = "
-              << static_cast<int>(state_);
+    SPDLOG_TRACE("TcpConnection::handleClose state = {}",
+                 static_cast<int>(state_));
     assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
     channel_->disableAll();
 }
 
 void TcpConnection::handleError() {
+    char buf[512];
     int err = sockets::getSocketError(channel_->fd());
-    LOG_ERROR << "TcpConnection::handleError [" << name_ << "] - SO_ERROR - "
-              << err << " " << strerror_tl(err);
+    SPDLOG_ERROR("TcpConnection::handleError [{}] - SO_ERROR - {} {}", name_, err, strerror_r(err, buf, 512));
 }

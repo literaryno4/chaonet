@@ -7,9 +7,11 @@
 #include "EventLoop.h"
 #include "EventLoopThread.h"
 
+#include <unistd.h>
+
 void runInThread() {
     printf("runInThread(): pid = %d, tid = %d\n", getpid(),
-           static_cast<pit_t>(::syscall(SYS_gettid)));
+           static_cast<pid_t>(::syscall(SYS_gettid)));
 }
 
 int main() {

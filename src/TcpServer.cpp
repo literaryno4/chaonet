@@ -11,13 +11,15 @@
 #include "Acceptor.h"
 #include "EventLoop.h"
 #include "EventLoopThreadPool.h"
-#include "Logging.h"
 #include "SocketsOps.h"
+#include "tools.h"
+
+#include <spdlog/spdlog.h>
 
 using namespace chaonet;
 
 TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAdr)
-    : loop_(CHECK_NOTNULL(loop)),
+    : loop_(checkNotNUll(loop)),
       name_(listenAdr.toHostPort()),
       acceptor_(new Acceptor(loop, listenAdr)),
       threadPool_(new EventLoopThreadPool(loop)),
@@ -43,7 +45,7 @@ void TcpServer::start() {
 
     if (!acceptor_->listening()) {
         loop_->runInLoop(std::bind(&Acceptor::listen, acceptor_.get()));
-        LOG_INFO << "listening on port: " << name_;
+        spdlog::info("listening on port: {}", name_);
     }
 }
 
@@ -54,8 +56,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     ++nextConnId_;
     std::string connName = name_ + buf;
 
-    LOG_INFO << "TcpServer::newConnection [" << name_ << "] - new connection ["
-             << connName << "] from " << peerAddr.toHostPort();
+    spdlog::info("TcpServer::newConnection [{}] - new connection [{}] from {}", name_, connName, peerAddr.toHostPort());
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
     auto ioLoop = threadPool_->getNextLoop();
     auto conn = std::make_shared<TcpConnection>(ioLoop, connName, sockfd,
@@ -76,8 +77,7 @@ void TcpServer::removeConnection(const TcpConnectionPtr &conn) {
 
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn) {
     loop_->assertInLoopThread();
-    LOG_INFO << "TcpServer::removeConnectionInLoop [" << name_
-             << "] - connection " << conn->name();
+    spdlog::info("TcpServer::removeConnectionInLoop [{}] - connection {}", name_, conn->name());
     size_t n = connections_.erase(conn->name());
     assert(n == 1); (void)n;
     EventLoop* ioLoop = conn->getLoop();

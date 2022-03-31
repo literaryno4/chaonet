@@ -11,20 +11,18 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "Logging.h"
-#include "Types.h"
+#include <spdlog/spdlog.h>
 
 using namespace chaonet;
-using namespace muduo;
 
 typedef struct sockaddr SA;
 
 const SA* sockaddr_cast(const struct sockaddr_in* addr) {
-    return static_cast<const SA*>(implicit_cast<const void*>(addr));
+    return static_cast<const SA*>(static_cast<const void*>(addr));
 }
 
 SA* sockaddr_cast(struct sockaddr_in* addr) {
-    return static_cast<SA*>(implicit_cast<void*>(addr));
+    return static_cast<SA*>(static_cast<void*>(addr));
 }
 
 void setNonBlockAndCloseOnExec(int sockfd) {
@@ -41,13 +39,13 @@ int sockets::createNonblockingOrDie() {
 #if VALGRIND
     int sockfd = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sockfd < 0) {
-        LOG_SYSFATAL << "sockets::createNonblockingOrDie";
+        SPDLOG_ERROR("sockets::createNonblockingOrDie");
     }
 #else
     int sockfd = ::socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,
                           IPPROTO_TCP);
     if (sockfd < 0) {
-        LOG_SYSFATAL << "sockets::createNonblockingOrDie";
+        SPDLOG_ERROR("sockets::createNonblockingOrDie");
     }
 #endif
     return sockfd;
@@ -56,14 +54,14 @@ int sockets::createNonblockingOrDie() {
 void sockets::bindOrDie(int sockfd, const struct sockaddr_in& addr) {
     int ret = ::bind(sockfd, sockaddr_cast(&addr), sizeof(addr));
     if (ret < 0) {
-        LOG_SYSFATAL << "sockets::bindOrDie";
+        SPDLOG_ERROR("sockets::bindOrDie");
     }
 }
 
 void sockets::listenOrDie(int sockfd) {
     int ret = ::listen(sockfd, SOMAXCONN);
     if (ret < 0) {
-        LOG_SYSFATAL << "sockets::listenOrDie";
+        SPDLOG_ERROR("sockets::listenOrDie");
     }
 }
 
@@ -78,7 +76,7 @@ int sockets::accept(int sockfd, struct sockaddr_in* addr) {
 #endif
     if (connfd < 0) {
         int savedErrno = errno;
-        LOG_SYSERR << "Socket::accept";
+        SPDLOG_ERROR("Socket::accept");
         switch (savedErrno) {
             case EAGAIN:
             case ECONNABORTED:
@@ -94,10 +92,10 @@ int sockets::accept(int sockfd, struct sockaddr_in* addr) {
             case ENOMEM:
             case ENOTSOCK:
             case EOPNOTSUPP:
-                LOG_FATAL << "unexpected error of ::accept " << savedErrno;
+                SPDLOG_ERROR("unexpected error of ::accept {}", savedErrno);
                 break;
             default:
-                LOG_FATAL << "unknown error of ::accept" << savedErrno;
+                SPDLOG_ERROR("unknown error of ::accept {}", savedErrno);
                 break;
         }
     }
@@ -106,13 +104,13 @@ int sockets::accept(int sockfd, struct sockaddr_in* addr) {
 
 void sockets::close(int sockfd) {
     if (::close(sockfd) < 0) {
-        LOG_SYSERR << "sockets::close";
+        SPDLOG_ERROR("sockets::close");
     }
 }
 
 void sockets::shutdownWrite(int sockfd) {
     if (::shutdown(sockfd, SHUT_WR) < 0) {
-        LOG_SYSERR << "sockets::shutdownWrite";
+        SPDLOG_ERROR("sockets::shutdownWrite");
     }
 }
 
@@ -129,7 +127,7 @@ void sockets::fromHostPort(const char* ip, uint16_t port,
     addr->sin_family = AF_INET;
     addr->sin_port = hostToNetwork16(port);
     if (::inet_pton(AF_INET, ip, &addr->sin_addr)) {
-        LOG_SYSERR << "sockets::fromHostPort";
+        SPDLOG_ERROR("sockets::fromHostPort");
     }
 }
 
@@ -138,7 +136,7 @@ struct sockaddr_in sockets::getLocalAddr(int sockfd) {
     bzero(&localaddr, sizeof localaddr);
     socklen_t addrlen = sizeof(localaddr);
     if (::getsockname(sockfd, sockaddr_cast(&localaddr), &addrlen) < 0) {
-        LOG_SYSERR << "sockets::getLocalAddr";
+        SPDLOG_ERROR("sockets::getLocalAddr");
     }
     return localaddr;
 }

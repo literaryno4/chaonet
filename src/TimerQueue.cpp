@@ -8,9 +8,9 @@
 #include <sys/timerfd.h>
 
 #include "EventLoop.h"
-#include "Logging.h"
 #include "Timer.h"
 #include "TimerId.h"
+#include <spdlog/spdlog.h>
 
 namespace chaonet {
 namespace detail {
@@ -18,7 +18,7 @@ namespace detail {
 int createTimerfd() {
     int timerfd = ::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
     if (timerfd < 0) {
-        LOG_SYSFATAL << "Failed in timerfd_create";
+        SPDLOG_ERROR("Failed in timerfd_create");
     }
     return timerfd;
 }
@@ -40,11 +40,10 @@ struct timespec howMuchTimeFromNow(Timestamp when) {
 void readTimerfd(int timerfd, Timestamp now) {
     uint64_t howmany;
     ssize_t n = ::read(timerfd, &howmany, sizeof(howmany));
-    LOG_TRACE << "TimerQueue::handleRead() " << howmany << " at "
-              << now.toString();
+    SPDLOG_TRACE("TimerQueue::handleRead() {} at {}", howmany,
+              now.toString());
     if (n != sizeof(howmany)) {
-        LOG_ERROR << "TimerQueue::handleRead() reads " << n
-                  << " bytes instead of 8";
+        SPDLOG_ERROR ("TimerQueue::handleRead() reads {} bytes instead of 8", n);
     }
 }
 
@@ -56,7 +55,7 @@ void resetTimerfd(int timerfd, Timestamp expiration) {
     newValue.it_value = howMuchTimeFromNow(expiration);
     int ret = ::timerfd_settime(timerfd, 0, &newValue, &oldValue);
     if (ret) {
-        LOG_SYSERR << "timerfd_settime()";
+        SPDLOG_ERROR("timerfd_settime()");
     }
 }
 }  // namespace detail

@@ -4,7 +4,7 @@
 
 #include "Channel.h"
 #include "EventLoop.h"
-#include "Logging.h"
+#include <spdlog/spdlog.h>
 
 #include <sstream>
 
@@ -12,7 +12,6 @@
 #include <sys/poll.h>
 
 using namespace chaonet;
-using namespace muduo;
 
 const int Channel::kNoneEvent = 0;
 const int Channel::kReadEvent = POLLIN | POLLPRI;
@@ -32,11 +31,11 @@ Channel::~Channel() {
 void Channel::handleEvent(Timestamp receiveTime) {
     eventHandling = true;
     if (revents_ & POLLNVAL) {
-        LOG_WARN << "Channel::handle_event() POLLNVAL";
+        SPDLOG_WARN("Channel::handle_event() POLLNVAL");
     }
 
     if ((revents_ & POLLHUP) && !(revents_ & POLLIN)) {
-        LOG_WARN << " Channel::handleEvent() POLLHUP";
+        SPDLOG_WARN(" Channel::handleEvent() POLLHUP");
         if (closeCallback_) closeCallback_();
     }
     if (revents_ & (POLLERR | POLLNVAL)) {

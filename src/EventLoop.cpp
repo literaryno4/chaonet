@@ -4,28 +4,26 @@
 
 #include "EventLoop.h"
 
+#include <signal.h>
 #include <sys/eventfd.h>
 #include <sys/poll.h>
 #include <unistd.h>
-#include <signal.h>
 
 #include <cassert>
 
 #include "Channel.h"
-#include "Logging.h"
 #include "Poller.h"
 #include "TimerQueue.h"
+#include <spdlog/spdlog.h>
 
 using namespace chaonet;
 
 class IgnoreSigPipe {
    public:
-    IgnoreSigPipe() {
-        ::signal(SIGPIPE, SIG_IGN);
-    }
+    IgnoreSigPipe() { ::signal(SIGPIPE, SIG_IGN); }
 };
 
-//IgnoreSigPipe initObj;
+// IgnoreSigPipe initObj;
 
 __thread EventLoop *t_loopInThisThread = nullptr;
 const int kPollTimeMs = 10000;
@@ -33,7 +31,7 @@ const int kPollTimeMs = 10000;
 static int createEventfd() {
     int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (evtfd < 0) {
-        LOG_SYSERR << "Failed in eventfd";
+        SPDLOG_ERROR("Failed in eventfd");
         abort();
     }
     return evtfd;
@@ -48,10 +46,9 @@ EventLoop::EventLoop()
       timerQueue_(new TimerQueue(this)),
       wakeupFd_(createEventfd()),
       wakeupChannel_(new Channel(this, wakeupFd_)) {
-    LOG_TRACE << "EventLoop created " << this << " in thread " << threadId_;
+    SPDLOG_TRACE("EventLoop created {} in thread {}", this, threadId_);
     if (t_loopInThisThread) {
-        LOG_FATAL << "Another EventLoop " << t_loopInThisThread
-                  << " exists in this thread " << threadId_;
+        SPDLOG_ERROR("Another EventLoop exists in this thread {}", threadId_);
     } else {
         t_loopInThisThread = this;
     }
@@ -80,7 +77,7 @@ void EventLoop::loop() {
         doPendingFunctors();
     }
 
-    LOG_TRACE << "EventLoop " << this << " stop looping";
+    SPDLOG_TRACE("EventLoop stop looping");
     looping_ = false;
 }
 
@@ -136,17 +133,20 @@ void EventLoop::removeChannel(Channel *channel) {
 }
 
 void EventLoop::abortNotInLoopThread() {
-    LOG_FATAL << "EventLoop::abortNotInLoopThread - EventLoop " << this
-              << " was created in threadId_ = " << threadId_
-              << ", current thread id = " << ::syscall(SYS_gettid);
+    SPDLOG_ERROR(
+        "EventLoop::abortNotInLoopThread - EventLoop was created in threadId_ "
+        "= {}, current thread id = ",
+        threadId_, ::syscall(SYS_gettid));
 }
 
 void EventLoop::wakeup() const {
     uint64_t one = 1;
     ssize_t n = ::write(wakeupFd_, &one, sizeof one);
     if (n != sizeof(one)) {
-        LOG_ERROR << "EventLoop::handleRead() reads " << n
-                  << "bytes instead of 8";
+        SPDLOG_ERROR(
+            "EventLoop::handleRead() reads {} "
+            "bytes instead of 8",
+            n);
     }
 }
 
@@ -154,8 +154,10 @@ void EventLoop::handleRead() const {
     uint64_t one = 1;
     ssize_t n = ::read(wakeupFd_, &one, sizeof(one));
     if (n != sizeof(one)) {
-        LOG_ERROR << "EventLoop::handleRead() read " << n
-                  << " bytes instead of 8";
+        SPDLOG_ERROR(
+            "EventLoop::handleRead() read {}"
+            " bytes instead of 8",
+            n);
     }
 }
 

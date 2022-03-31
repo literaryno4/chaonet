@@ -9,7 +9,7 @@
 #include <cassert>
 
 #include "Channel.h"
-#include "Logging.h"
+#include <spdlog/spdlog.h>
 
 using namespace chaonet;
 
@@ -21,12 +21,12 @@ Timestamp Poller::poll(int timeoutMs, ChannelList *activeChannels) {
     int numEvents = ::poll(&*pollfds_.begin(), pollfds_.size(), timeoutMs);
     Timestamp now(Timestamp::now());
     if (numEvents > 0) {
-        LOG_TRACE << numEvents << " events happened";
+        SPDLOG_TRACE("{} events happened", numEvents);
         fillActiveChannels(numEvents, activeChannels);
     } else if (numEvents == 0) {
-        LOG_TRACE << " nothing happened";
+        SPDLOG_TRACE("nothing happened");
     } else {
-        LOG_SYSERR << "Poller::poll()";
+        SPDLOG_ERROR("Poller::poll()");
     }
     return now;
 }
@@ -49,7 +49,7 @@ void Poller::fillActiveChannels(int numEvents,
 
 void Poller::updateChannel(Channel *channel) {
     assertInLoopThread();
-    LOG_TRACE << "fd = " << channel->fd() << " events = " << channel->events();
+    SPDLOG_TRACE("fd = {}, events = {}", channel->fd(), channel->events());
     if (channel->index() < 0) {
         assert(channels_.find(channel->fd()) == channels_.end());
         struct pollfd pfd;
@@ -77,7 +77,7 @@ void Poller::updateChannel(Channel *channel) {
 
 void ::Poller::removeChannel(Channel *channel) {
     assertInLoopThread();
-    LOG_TRACE << "fd = " << channel->fd();
+    SPDLOG_TRACE("fd = {}", channel->fd());
     assert(channels_.find(channel->fd()) != channels_.end());
     assert(channels_[channel->fd()] == channel);
     assert(channel->isNoneEvent());
