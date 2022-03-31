@@ -15,7 +15,6 @@
 #include "SocketsOps.h"
 
 using namespace chaonet;
-using namespace muduo;
 
 TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAdr)
     : loop_(CHECK_NOTNULL(loop)),

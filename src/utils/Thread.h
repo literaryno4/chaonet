@@ -34,6 +34,9 @@ class Thread {
     bool started () const {
         return started_;
     }
+    const std::string& getName() const {
+        return name_;
+    }
 
    private:
     ThreadFunc threadFunc_;
