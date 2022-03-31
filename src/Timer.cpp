@@ -6,10 +6,10 @@
 
 using namespace chaonet;
 
-void Timer::restart(muduo::Timestamp now) {
+void Timer::restart(Timestamp now) {
     if (repeat_) {
-        expiration_ = muduo::addTime(now, interval_);
+        expiration_ = addTime(now, interval_);
     } else {
-        expiration_ = muduo::Timestamp::invalid();
+        expiration_ = Timestamp::invalid();
     }
 }

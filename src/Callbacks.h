@@ -8,7 +8,7 @@
 #include <functional>
 #include <memory>
 
-#include "Timestamp.h"
+#include "utils/Timestamp.h"
 
 namespace chaonet {
 
@@ -22,7 +22,7 @@ typedef std::function<void(const TcpConnectionPtr&)> ConnectionCallback;
 typedef std::function<void(const TcpConnectionPtr&)> WriteCompleteCallback;
 typedef std::function<void(const TcpConnectionPtr&)> CloseCallback;
 typedef std::function<void(const TcpConnectionPtr&, Buffer* buf,
-                           muduo::Timestamp)>
+                           Timestamp)>
     MessageCallback;
 
 

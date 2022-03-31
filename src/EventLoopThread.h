@@ -5,7 +5,7 @@
 #ifndef CHAONET_EVENTLOOPTHREAD_H
 #define CHAONET_EVENTLOOPTHREAD_H
 
-#include "Thread.h"
+#include "utils/Thread.h"
 #include <mutex>
 #include <condition_variable>
 

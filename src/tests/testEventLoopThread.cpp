@@ -9,12 +9,12 @@
 
 void runInThread() {
     printf("runInThread(): pid = %d, tid = %d\n", getpid(),
-           muduo::CurrentThread::tid());
+           static_cast<pit_t>(::syscall(SYS_gettid)));
 }
 
 int main() {
     printf("main(): pid = %d, tid = %d\n", getpid(),
-           muduo::CurrentThread::tid());
+           static_cast<pid_t>(::syscall(SYS_gettid)));
     chaonet::EventLoopThread loopThread;
     chaonet::EventLoop* loop = loopThread.startLoop();
     loop->runInLoop(runInThread);

@@ -9,18 +9,20 @@
 #include "CurrentThread.h"
 #include "EventLoop.h"
 #include "Poller.h"
-#include "Thread.h"
+#include "utils/Thread.h"
+
+using namespace chaonet;
 
 chaonet::EventLoop* g_loop;
 int cnt = 0;
 
 void printTid() {
     printf("pid = %d, tid = %d\n", getpid(), muduo::CurrentThread::tid());
-    printf("now %s\n", muduo::Timestamp::now().toString().c_str());
+    printf("now %s\n", Timestamp::now().toString().c_str());
 }
 
 void print(const char* msg) {
-    printf("msg %s %s\n", muduo::Timestamp::now().toString().c_str(), msg);
+    printf("msg %s %s\n", Timestamp::now().toString().c_str(), msg);
     if (++cnt == 20) {
         g_loop->quit();
     }
@@ -36,7 +38,7 @@ void threadFunc1() {
 
 void threadFunc2() { g_loop->loop(); }
 
-void timeout(muduo::Timestamp) {
+void timeout(Timestamp) {
     printf("Timeout!\n");
     g_loop->quit();
 }
@@ -45,7 +47,7 @@ void test1() {
     printf("main(): pid = %d, tid = %d\n", getpid(),
            muduo::CurrentThread::tid());
     chaonet::EventLoop loop;
-    muduo::Thread thread(threadFunc1);
+    Thread thread(threadFunc1);
     thread.start();
     loop.loop();
     pthread_exit(NULL);
@@ -54,7 +56,7 @@ void test1() {
 void test2() {
     chaonet::EventLoop loop;
     g_loop = &loop;
-    muduo::Thread t(threadFunc2);
+    Thread t(threadFunc2);
     t.start();
     t.join();
 }
@@ -90,11 +92,11 @@ void test5() {
     g_loop = &loop;
 
     print("main");
-    loop.runAfter(1, std::bind(print, "once1"));
-    loop.runAfter(1.5, std::bind(print, "once1.5"));
+    loop.runAfter(10, std::bind(print, "once1"));
+    loop.runAfter(10, std::bind(print, "once1.5"));
     loop.runAfter(2.5, std::bind(print, "once2.5"));
     loop.runAfter(3.5, std::bind(print, "once3.5"));
-    loop.runEvery(2, std::bind(print, "every2"));
+    loop.runEvery(3, std::bind(print, "every2"));
     loop.runEvery(3, std::bind(print, "every3"));
 
     loop.loop();
@@ -112,7 +114,7 @@ void threadFunc() { g_loop->runAfter(1.0, print1); }
 void test6() {
     chaonet::EventLoop loop;
     g_loop = &loop;
-    muduo::Thread t(threadFunc);
+    Thread t(threadFunc);
     t.start();
     loop.loop();
 }
@@ -122,8 +124,8 @@ int main() {
     //    test2();
     //    test3();
     //    test4();
-    //    test5();
-    test6();
+        test5();
+//    test6();
 
     return 0;
 }

@@ -7,7 +7,7 @@
 
 #include <functional>
 
-#include "Timestamp.h"
+#include "utils/Timestamp.h"
 
 namespace chaonet {
 
@@ -15,7 +15,7 @@ class Timer {
    public:
     typedef std::function<void()> TimerCallback;
 
-    Timer(const TimerCallback& cb, muduo::Timestamp when, double interval)
+    Timer(const TimerCallback& cb, Timestamp when, double interval)
         : callback_(cb),
           expiration_(when),
           interval_(interval),
@@ -27,14 +27,14 @@ class Timer {
         callback_();
     }
 
-    muduo::Timestamp expiration() const {return expiration_;}
+    Timestamp expiration() const {return expiration_;}
     bool repeat() const { return repeat_;}
 
-    void restart(muduo::Timestamp now);
+    void restart(Timestamp now);
 
    private:
     const TimerCallback callback_;
-    muduo::Timestamp expiration_;
+    Timestamp expiration_;
     const double interval_;
     const bool repeat_;
 };

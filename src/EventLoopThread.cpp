@@ -5,6 +5,7 @@
 #include "EventLoopThread.h"
 
 #include <functional>
+#include <assert.h>
 
 #include "EventLoop.h"
 

@@ -9,10 +9,11 @@
 #include <vector>
 #include <iostream>
 #include <sys/types.h>
+#include <unistd.h>
 #include <sys/syscall.h>
 
 #include "TimerId.h"
-#include "Timestamp.h"
+#include "utils/Timestamp.h"
 #include "Callbacks.h"
 
 namespace chaonet {
@@ -33,13 +34,13 @@ class EventLoop {
 
     void quit();
 
-    muduo::Timestamp pollReturnTime() const { return pollReturnTimer_; }
+    Timestamp pollReturnTime() const { return pollReturnTimer_; }
 
     void runInLoop(const Functor& cb);
 
     void queueInLoop(const Functor& cb);
 
-    TimerId runAt(const muduo::Timestamp& time, const TimerCallback& cb);
+    TimerId runAt(const Timestamp& time, const TimerCallback& cb);
     TimerId runAfter(double delay, const TimerCallback& cb);
     TimerId runEvery(double interval, const TimerCallback& cb);
 
@@ -69,7 +70,7 @@ class EventLoop {
     bool quit_;
     bool callingPendingFunctors_;
     const pid_t threadId_;
-    muduo::Timestamp pollReturnTimer_;
+    Timestamp pollReturnTimer_;
     std::unique_ptr<Poller> poller_;
     std::unique_ptr<TimerQueue> timerQueue_;
 

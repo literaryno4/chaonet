@@ -29,7 +29,7 @@ Channel::~Channel() {
 
 }
 
-void Channel::handleEvent(muduo::Timestamp receiveTime) {
+void Channel::handleEvent(Timestamp receiveTime) {
     eventHandling = true;
     if (revents_ & POLLNVAL) {
         LOG_WARN << "Channel::handle_event() POLLNVAL";

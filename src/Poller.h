@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "EventLoop.h"
-#include "Timestamp.h"
+#include "utils/Timestamp.h"
 
 struct pollfd;
 
@@ -24,7 +24,7 @@ class Poller {
     Poller(EventLoop* loop);
     ~Poller();
 
-    muduo::Timestamp poll(int timeoutMs, ChannelList* activeChannels);
+    Timestamp poll(int timeoutMs, ChannelList* activeChannels);
     void updateChannel(Channel* channel);
     void removeChannel(Channel* channel);
 

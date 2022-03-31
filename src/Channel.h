@@ -6,7 +6,7 @@
 #define CHAONET_CHANNEL_H
 
 #include <functional>
-#include "Timestamp.h"
+#include "utils/Timestamp.h"
 
 namespace chaonet {
 
@@ -15,13 +15,13 @@ class EventLoop;
 class Channel {
    public:
     typedef std::function<void()> EventCallback;
-    typedef std::function<void(muduo::Timestamp)> ReadEventCallback;
+    typedef std::function<void(Timestamp)> ReadEventCallback;
 
     Channel(EventLoop* loop, int fd);
     Channel(const Channel&) = delete;
     ~Channel();
 
-    void handleEvent(muduo::Timestamp receiveTime);
+    void handleEvent(Timestamp receiveTime);
     void setReadCallback(const ReadEventCallback& cb) { readCallback_ = cb; }
     void setWriteCallback(const EventCallback& cb) { writeCallback_ = cb; }
     void setErrorCallback(const EventCallback& cb) { errorCallback_ = cb; }

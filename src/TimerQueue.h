@@ -10,10 +10,8 @@
 #include <memory>
 
 #include "Channel.h"
-#include "Timestamp.h"
+#include "utils/Timestamp.h"
 #include "Callbacks.h"
-
-using namespace muduo;
 
 namespace chaonet {
 

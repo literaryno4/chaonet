@@ -6,6 +6,7 @@
 
 #include "EventLoop.h"
 #include "EventLoopThread.h"
+#include <assert.h>
 
 using namespace chaonet;
 

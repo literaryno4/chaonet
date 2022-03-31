@@ -13,7 +13,6 @@
 #include "SocketsOps.h"
 
 using namespace chaonet;
-using namespace muduo;
 
 ssize_t Buffer::readFd(int fd, int *savedErrno) {
     char extrabuf[65536];

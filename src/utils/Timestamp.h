@@ -7,12 +7,9 @@
 #include <sys/types.h>
 
 #include <chrono>
-#include <ctime>
 #include <iomanip>
 #include <sstream>
 #include <string>
-
-using namespace std::chrono;
 
 namespace chaonet {
 
@@ -48,9 +45,19 @@ class Timestamp {
 
     time_t secondsSinceEpoch() const {
         return static_cast<time_t>(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::duration_cast<std::chrono::seconds>(
                 timePoint_.time_since_epoch())
                 .count());
+    }
+
+    int64_t microSecondsSinceEpoch() const {
+        return static_cast<int64_t>(
+            std::chrono::duration_cast<std::chrono::microseconds>(
+                timePoint_.time_since_epoch())
+                .count());
+    }
+    bool valid() const {
+        return timePoint_ >= TimePoint();
     }
 
     static Timestamp now() { return Timestamp(Clock::now()); }

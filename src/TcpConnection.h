@@ -59,7 +59,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     };
 
     void setState(StateE s) { state_ = s; }
-    void handleRead(muduo::Timestamp receiveTime);
+    void handleRead(Timestamp receiveTime);
     void handleWrite();
     void handleClose();
     void handleError();

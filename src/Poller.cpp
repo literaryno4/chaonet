@@ -11,7 +11,6 @@
 #include "Channel.h"
 #include "Logging.h"
 
-using namespace muduo;
 using namespace chaonet;
 
 Poller::Poller(EventLoop *loop) : ownerLoop_(loop) {}
@@ -90,7 +89,7 @@ void ::Poller::removeChannel(Channel *channel) {
     size_t n = channels_.erase(channel->fd());
     assert(n == 1);
     (void)n;
-    if (implicit_cast<size_t>(idx) == pollfds_.size() - 1) {
+    if (static_cast<size_t>(idx) == pollfds_.size() - 1) {
         pollfds_.pop_back();
     } else {
         int channelAtEnd = pollfds_.back().fd;
