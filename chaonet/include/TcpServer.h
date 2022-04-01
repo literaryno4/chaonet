@@ -5,7 +5,6 @@
 #ifndef CHAONET_TCPSERVER_H
 #define CHAONET_TCPSERVER_H
 
-#include "Callbacks.h"
 #include "TcpConnection.h"
 
 #include <map>
