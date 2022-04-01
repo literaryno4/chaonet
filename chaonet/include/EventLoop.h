@@ -13,7 +13,6 @@
 #include <sys/syscall.h>
 
 #include "TimerId.h"
-#include "utils/Timestamp.h"
 #include "Callbacks.h"
 
 namespace chaonet {
