@@ -4,13 +4,13 @@
 
 #include "TimerQueue.h"
 
-#include <unistd.h>
+#include <spdlog/spdlog.h>
 #include <sys/timerfd.h>
+#include <unistd.h>
 
 #include "EventLoop.h"
 #include "Timer.h"
 #include "TimerId.h"
-#include <spdlog/spdlog.h>
 
 namespace chaonet {
 namespace detail {
@@ -40,10 +40,9 @@ struct timespec howMuchTimeFromNow(Timestamp when) {
 void readTimerfd(int timerfd, Timestamp now) {
     uint64_t howmany;
     ssize_t n = ::read(timerfd, &howmany, sizeof(howmany));
-    SPDLOG_TRACE("TimerQueue::handleRead() {} at {}", howmany,
-              now.toString());
+    SPDLOG_TRACE("TimerQueue::handleRead() {} at {}", howmany, now.toString());
     if (n != sizeof(howmany)) {
-        SPDLOG_ERROR ("TimerQueue::handleRead() reads {} bytes instead of 8", n);
+        SPDLOG_ERROR("TimerQueue::handleRead() reads {} bytes instead of 8", n);
     }
 }
 
@@ -67,20 +66,24 @@ TimerQueue::TimerQueue(EventLoop *loop)
     : loop_(loop),
       timerfd_(createTimerfd()),
       timerfdChannel_(loop, timerfd_),
-      timers_() {
+      timers_(),
+      callingExpiredTimers_(false) {
     timerfdChannel_.setReadCallback(std::bind(&TimerQueue::handleRead, this));
     timerfdChannel_.enableReading();
 }
 
-TimerQueue::~TimerQueue() {
-    ::close(timerfd_);
-}
+TimerQueue::~TimerQueue() { ::close(timerfd_); }
 
-TimerId TimerQueue::addTimer(const TimerCallback &cb, Timestamp when, double interval) {
+TimerId TimerQueue::addTimer(const TimerCallback &cb, Timestamp when,
+                             double interval) {
     TimerPtr timer = std::make_shared<Timer>(cb, when, interval);
     loop_->runInLoop(std::bind(&TimerQueue::addTimerInLoop, this, timer));
 
-    return TimerId(timer.get());
+    return TimerId(timer.get(), timer->sequence());
+}
+
+void TimerQueue::cancel(TimerId timerId) {
+    loop_->runInLoop(std::bind(&TimerQueue::cancelInLoop, this, timerId));
 }
 
 void TimerQueue::addTimerInLoop(TimerPtr timer) {
@@ -91,20 +94,66 @@ void TimerQueue::addTimerInLoop(TimerPtr timer) {
     }
 }
 
+void TimerQueue::cancelInLoop(TimerId timerId) {
+    loop_->assertInLoopThread();
+    assert(timers_.size() == activeTimers_.size());
+
+    //***** do not init activeTimer like this: *****
+    //
+    // ActiveTimer timer(timerId.timer(), timerId.sequence());
+    //
+    //***** this is because init a shared_ptr from raw pointer
+    // will cause one more control block, which leads to UD or
+    // double free. *****
+
+    // correct method is finding the previous shared_ptr and init
+    // from that.
+    TimerPtr timerPtr;
+    for (auto &timer : activeTimers_) {
+        if (timer.first.get() == timerId.timer() &&
+            timer.second == timerId.sequence()) {
+            timerPtr = timer.first;
+            break;
+        }
+    }
+    ActiveTimer timer(timerPtr, timerId.sequence());
+
+    ActiveTimerSet::iterator it = activeTimers_.find(timer);
+    if (it != activeTimers_.end()) {
+        SPDLOG_DEBUG("erasing timer {}", it->second);
+        size_t n = timers_.erase(Entry(it->first->expiration(), it->first));
+        assert(n == 1);
+        (void)n;
+        auto itErase = activeTimers_.erase(it);
+        assert(itErase != activeTimers_.end());
+        SPDLOG_DEBUG("erased timer {}", it->second);
+    } else if (callingExpiredTimers_) {
+        cancelingTimers_.insert(timer);
+    }
+    assert(timers_.size() == activeTimers_.size());
+}
+
 void TimerQueue::handleRead() {
     loop_->assertInLoopThread();
     Timestamp now(Timestamp::now());
     readTimerfd(timerfd_, now);
     std::vector<Entry> expired = getExpired(now);
 
-    for(auto it = expired.begin(); it != expired.end(); ++it) {
+    callingExpiredTimers_ = true;
+    SPDLOG_DEBUG("clearing canceling Timers, size: {}",
+                 cancelingTimers_.size());
+    cancelingTimers_.clear();
+
+    for (auto it = expired.begin(); it != expired.end(); ++it) {
         it->second->run();
     }
+    callingExpiredTimers_ = false;
 
     reset(expired, now);
 }
 
 std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now) {
+    assert(timers_.size() == activeTimers_.size());
     std::vector<Entry> expired;
     Entry sentry = std::make_pair(now, nullptr);
     auto it = timers_.lower_bound(sentry);
@@ -112,13 +161,25 @@ std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now) {
     std::copy(timers_.begin(), it, std::back_inserter(expired));
     timers_.erase(timers_.begin(), it);
 
+    for (auto &entry : expired) {
+        SPDLOG_DEBUG("Erasing expired timer...");
+        ActiveTimer timer(entry.second, entry.second->sequence());
+        size_t n = activeTimers_.erase(timer);
+        assert(n == 1);
+        (void)n;
+    }
+
+    assert(timers_.size() == activeTimers_.size());
+
     return expired;
 }
 
 void TimerQueue::reset(const std::vector<Entry> &expired, Timestamp now) {
     Timestamp nextExpire;
     for (auto it = expired.begin(); it != expired.end(); ++it) {
-        if (it->second->repeat()) {
+        ActiveTimer timer(it->second, it->second->sequence());
+        if (it->second->repeat() &&
+            cancelingTimers_.find(timer) == cancelingTimers_.end()) {
             it->second->restart(now);
             insert(it->second);
         }
@@ -134,14 +195,26 @@ void TimerQueue::reset(const std::vector<Entry> &expired, Timestamp now) {
 }
 
 bool TimerQueue::insert(TimerPtr timer) {
+    loop_->assertInLoopThread();
+    assert(timers_.size() == activeTimers_.size());
     bool earliestChanged = false;
     Timestamp when = timer->expiration();
     auto it = timers_.begin();
     if (it == timers_.end() || when < it->first) {
         earliestChanged = true;
     }
-    auto result = timers_.insert(std::make_pair(when, timer));
-    assert(result.second);
+    {
+        auto result = timers_.insert(std::make_pair(when, timer));
+        assert(result.second);
+    }
+    {
+        auto result =
+            activeTimers_.insert(std::make_pair(timer, timer->sequence()));
+        assert(result.second);
+        (void)result;
+    }
+
+    assert(timers_.size() == activeTimers_.size());
     return earliestChanged;
 }
 

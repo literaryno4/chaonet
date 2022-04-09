@@ -43,6 +43,8 @@ class EventLoop {
     TimerId runAfter(double delay, const TimerCallback& cb);
     TimerId runEvery(double interval, const TimerCallback& cb);
 
+    void cancel(TimerId timerId);
+
     void wakeup() const;
 
     void updateChannel(Channel* channel);

@@ -11,10 +11,18 @@ class Timer;
 
 class TimerId {
    public:
-    explicit TimerId(Timer* timer) : value_(timer) {}
+    explicit TimerId(Timer* timer = nullptr, int64_t seq = 0)
+        : timer_(timer), sequence_(seq) {}
+    Timer* timer() {
+        return timer_;
+    }
+    int64_t sequence() {
+        return sequence_;
+    }
 
    private:
-    Timer* value_;
+    Timer* timer_;
+    int64_t sequence_;
 };
 
 }  // namespace chaonet

@@ -45,7 +45,7 @@ void TcpServer::start() {
 
     if (!acceptor_->listening()) {
         loop_->runInLoop(std::bind(&Acceptor::listen, acceptor_.get()));
-        spdlog::info("listening on port: {}", name_);
+        SPDLOG_INFO("listening on port: {}", name_);
     }
 }
 
@@ -56,7 +56,7 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     ++nextConnId_;
     std::string connName = name_ + buf;
 
-    spdlog::info("TcpServer::newConnection [{}] - new connection [{}] from {}", name_, connName, peerAddr.toHostPort());
+    SPDLOG_INFO("TcpServer::newConnection [{}] - new connection [{}] from {}", name_, connName, peerAddr.toHostPort());
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
     auto ioLoop = threadPool_->getNextLoop();
     auto conn = std::make_shared<TcpConnection>(ioLoop, connName, sockfd,
@@ -77,7 +77,7 @@ void TcpServer::removeConnection(const TcpConnectionPtr &conn) {
 
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn) {
     loop_->assertInLoopThread();
-    spdlog::info("TcpServer::removeConnectionInLoop [{}] - connection {}", name_, conn->name());
+    SPDLOG_INFO("TcpServer::removeConnectionInLoop [{}] - connection {}", name_, conn->name());
     size_t n = connections_.erase(conn->name());
     assert(n == 1); (void)n;
     EventLoop* ioLoop = conn->getLoop();

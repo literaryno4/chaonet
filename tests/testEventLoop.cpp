@@ -3,10 +3,12 @@
 //
 #include <stdio.h>
 #include <sys/timerfd.h>
+#include <sys/syscall.h>
 #include <unistd.h>
+#include <strings.h>
+#include <spdlog/spdlog.h>
 
 #include "Channel.h"
-#include "CurrentThread.h"
 #include "EventLoop.h"
 #include "Poller.h"
 #include "utils/Thread.h"
@@ -14,10 +16,11 @@
 using namespace chaonet;
 
 chaonet::EventLoop* g_loop;
+chaonet::TimerId toCancel;
 int cnt = 0;
 
 void printTid() {
-    printf("pid = %d, tid = %d\n", getpid(), muduo::CurrentThread::tid());
+    printf("pid = %d, tid = %d\n", getpid(), static_cast<pid_t>(::syscall(SYS_gettid)));
     printf("now %s\n", Timestamp::now().toString().c_str());
 }
 
@@ -30,7 +33,7 @@ void print(const char* msg) {
 
 void threadFunc1() {
     printf("threadFunc(): pid = %d, tid = %d\n", getpid(),
-           muduo::CurrentThread::tid());
+           static_cast<pid_t>(::syscall(SYS_gettid)));
 
     chaonet::EventLoop loop;
     loop.loop();
@@ -43,9 +46,14 @@ void timeout(Timestamp) {
     g_loop->quit();
 }
 
+void cancelSelf() {
+    printf("cancelSelf()\n");
+    g_loop->cancel(toCancel);
+}
+
 void test1() {
     printf("main(): pid = %d, tid = %d\n", getpid(),
-           muduo::CurrentThread::tid());
+           static_cast<pid_t>(::syscall(SYS_gettid)));
     chaonet::EventLoop loop;
     Thread thread(threadFunc1);
     thread.start();
@@ -96,8 +104,12 @@ void test5() {
     loop.runAfter(10, std::bind(print, "once1.5"));
     loop.runAfter(2.5, std::bind(print, "once2.5"));
     loop.runAfter(3.5, std::bind(print, "once3.5"));
-    loop.runEvery(3, std::bind(print, "every2"));
+    chaonet::TimerId t = loop.runEvery(3, std::bind(print, "every2"));
     loop.runEvery(3, std::bind(print, "every3"));
+    loop.runAfter(10, std::bind(&chaonet::EventLoop::cancel, &loop, t));
+    SPDLOG_INFO("timer {} will be erased", t.sequence());
+//    loop.runEvery(5, cancelSelf);
+    toCancel = t;
 
     loop.loop();
     print("main loop exits");
