@@ -17,11 +17,10 @@ class Channel;
 class EventLoop;
 
 class Connector {
-   private:
+   public:
     typedef std::function<void (int sockfd)> NewConnectionCallback;
     Connector(EventLoop* loop, const InetAddress& serverAddr);
     ~Connector();
-
     void setNewConnectionCallback(const NewConnectionCallback& cb) {
         newConnectionCallback_ = cb;
     }

@@ -23,7 +23,7 @@ class IgnoreSigPipe {
     IgnoreSigPipe() { ::signal(SIGPIPE, SIG_IGN); }
 };
 
-// IgnoreSigPipe initObj;
+IgnoreSigPipe initObj;
 
 __thread EventLoop *t_loopInThisThread = nullptr;
 const int kPollTimeMs = 10000;

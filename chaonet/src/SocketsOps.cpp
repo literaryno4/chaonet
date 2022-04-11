@@ -129,7 +129,7 @@ void sockets::fromHostPort(const char* ip, uint16_t port,
                            struct sockaddr_in* addr) {
     addr->sin_family = AF_INET;
     addr->sin_port = hostToNetwork16(port);
-    if (::inet_pton(AF_INET, ip, &addr->sin_addr)) {
+    if (::inet_pton(AF_INET, ip, &addr->sin_addr) <= 0) {
         SPDLOG_ERROR("sockets::fromHostPort");
     }
 }
@@ -148,7 +148,7 @@ struct sockaddr_in sockets::getPeerAddr(int sockfd) {
     struct sockaddr_in peeraddr;
     bzero(&peeraddr, sizeof peeraddr);
     socklen_t addrlen = sizeof(peeraddr);
-    if (::getsockname(sockfd, sockaddr_cast(&peeraddr), &addrlen) < 0) {
+    if (::getpeername(sockfd, sockaddr_cast(&peeraddr), &addrlen) < 0) {
         SPDLOG_ERROR("sockets::getPeerAddr");
     }
     return peeraddr;

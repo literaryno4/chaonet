@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+EventLoop *-- Poller
+EventLoop *-- Channel
+EventLoop "add timers" *-- TimerQueue
+Poller - Channel : wait events >
+TimerQueue - Channel : registry >
+
+class Channel {
+    + handleEvent()
+}
+
+class Poller {
+    + poll()
+}
+
+class TimerQueue {
+    + addTimer()
+}
+
+class EventLoop {
+    - vector<functor> pendingFunctors
+    + loop()
+    + queueInLoop()
+    + runAt(), runAfter(), runEvery()
+}
+
+@enduml

@@ -2,12 +2,12 @@
 // Created by chao on 2022/3/16.
 //
 
+#include <spdlog/spdlog.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <spdlog/spdlog.h>
 
-#include "TcpServer.h"
 #include "EventLoop.h"
+#include "TcpServer.h"
 
 void onConnection(const chaonet::TcpConnectionPtr& conn) {
     if (conn->connected()) {
@@ -35,15 +35,17 @@ void onConnectionSend(const chaonet::TcpConnectionPtr& conn) {
 
 void onMessage(const chaonet::TcpConnectionPtr& conn, chaonet::Buffer* buf,
                chaonet::Timestamp receiveTime) {
-    printf("onMessage(): received %zd bytes from connection [%s] at %s\n", buf->readableBytes(),
-           conn->name().c_str(), receiveTime.toFormattedString().c_str());
+    printf("onMessage(): received %zd bytes from connection [%s] at %s\n",
+           buf->readableBytes(), conn->name().c_str(),
+           receiveTime.toFormattedString().c_str());
     printf("onMessage(): [%s]\n", buf->retrieveAsString().c_str());
 }
 
 void onMessageSend(const chaonet::TcpConnectionPtr& conn, chaonet::Buffer* buf,
-               chaonet::Timestamp receiveTime) {
-    printf("onMessage(): received %zd bytes from connection [%s] at %s\n", buf->readableBytes(),
-           conn->name().c_str(), receiveTime.toFormattedString().c_str());
+                   chaonet::Timestamp receiveTime) {
+    printf("onMessage(): received %zd bytes from connection [%s] at %s\n",
+           buf->readableBytes(), conn->name().c_str(),
+           receiveTime.toFormattedString().c_str());
     conn->send(buf->retrieveAsString());
 }
 
@@ -58,8 +60,8 @@ void test1() {
 
     chaonet::TcpServer server(&loop, listenAddr);
     server.setConnectionCallback(onConnection);
-//    server.setConnectionCallback(onConnectionSend);
-//    server.setMessageCallback(onMessage);
+    //    server.setConnectionCallback(onConnectionSend);
+    //    server.setMessageCallback(onMessage);
     server.setMessageCallback(onMessageSend);
     server.setWriteCompleteCallback(onWriteComplete);
     server.start();
@@ -73,7 +75,14 @@ void test2(int threadNum) {
     chaonet::EventLoop loop;
 
     chaonet::TcpServer server(&loop, listenAddr);
-    server.setConnectionCallback(onConnection);
+//    server.setConnectionCallback(onConnection);
+    server.setConnectionCallback([](const chaonet::TcpConnectionPtr& conn) {
+        if (conn->connected()) {
+            printf("lambda on Connection");
+        } else {
+            printf("lambda on Connection, conn is down");
+        }
+    });
     server.setMessageCallback(onMessageSend);
     server.setThreadNum(threadNum);
     server.start();
@@ -82,7 +91,6 @@ void test2(int threadNum) {
 }
 
 int main() {
-    spdlog::set_level(spdlog::level::debug);
     test2(5);
 
     return 0;
