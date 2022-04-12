@@ -78,9 +78,9 @@ void test2(int threadNum) {
 //    server.setConnectionCallback(onConnection);
     server.setConnectionCallback([](const chaonet::TcpConnectionPtr& conn) {
         if (conn->connected()) {
-            printf("lambda on Connection");
+            printf("lambda on Connection\n");
         } else {
-            printf("lambda on Connection, conn is down");
+            printf("lambda on Connection, conn is down\n");
         }
     });
     server.setMessageCallback(onMessageSend);

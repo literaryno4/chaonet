@@ -19,6 +19,7 @@ class Channel {
 
     Channel(EventLoop* loop, int fd);
     Channel(const Channel&) = delete;
+    Channel& operator=(const Channel&) = delete;
     ~Channel();
 
     void handleEvent(Timestamp receiveTime);

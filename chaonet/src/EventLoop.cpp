@@ -13,6 +13,7 @@
 
 #include "Channel.h"
 #include "Poller.h"
+#include "EPoller.h"
 #include "TimerQueue.h"
 #include <spdlog/spdlog.h>
 
@@ -42,7 +43,7 @@ EventLoop::EventLoop()
       quit_(false),
       callingPendingFunctors_(false),
       threadId_(::syscall(SYS_gettid)),
-      poller_(new Poller(this)),
+      poller_(new EPoller(this)),
       timerQueue_(new TimerQueue(this)),
       wakeupFd_(createEventfd()),
       wakeupChannel_(new Channel(this, wakeupFd_)) {

@@ -21,7 +21,9 @@ class Poller {
    public:
     typedef std::vector<Channel*> ChannelList;
 
-    Poller(EventLoop* loop);
+    explicit Poller(EventLoop* loop);
+    Poller(const Poller&) = delete;
+    Poller& operator=(const Poller&) = delete;
     ~Poller();
 
     Timestamp poll(int timeoutMs, ChannelList* activeChannels);

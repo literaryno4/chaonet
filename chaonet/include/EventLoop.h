@@ -18,7 +18,8 @@
 namespace chaonet {
 
 class Channel;
-class Poller;
+//class Poller;
+class EPoller;
 class TimerQueue;
 
 class EventLoop {
@@ -72,7 +73,7 @@ class EventLoop {
     bool callingPendingFunctors_;
     const pid_t threadId_;
     Timestamp pollReturnTimer_;
-    std::unique_ptr<Poller> poller_;
+    std::unique_ptr<EPoller> poller_;
     std::unique_ptr<TimerQueue> timerQueue_;
 
     int wakeupFd_;
