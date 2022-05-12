@@ -15,7 +15,7 @@ typedef std::shared_ptr<Connector> ConnectorPtr;
 
 class TcpClient {
    public:
-    TcpClient(EventLoop* loop, const InetAddress& serverAddr);
+    TcpClient(EventLoop* loop, const InetAddress& serverAddr, const std::string& name = "");
     ~TcpClient();
 
     void connect();
@@ -56,6 +56,7 @@ class TcpClient {
     int nextConnId_;
     mutable std::mutex mutex_;
     TcpConnectionPtr connection_;
+    std::string name_;
 };
 
 }

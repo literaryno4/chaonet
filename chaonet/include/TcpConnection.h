@@ -47,6 +47,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     void connectionDestroyed();
 
     void send(const std::string& message);
+    void send(Buffer* buf);
     void shutdown();
     void setTcpNoDelay(bool on);
 

@@ -9,6 +9,8 @@
 #include "InetAddress.h"
 #include "SocketsOps.h"
 
+#include <atomic>
+
 void newConnection(int sockfd, const chaonet::InetAddress& peerAddr) {
     printf("newConnection(): accepted a new connection from %s\n",
            peerAddr.toHostPort().c_str());

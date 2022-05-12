@@ -4,6 +4,7 @@
 
 #include "TcpServer.h"
 
+#include <spdlog/spdlog.h>
 #include <stdio.h>
 
 #include <memory>
@@ -14,8 +15,6 @@
 #include "SocketsOps.h"
 #include "utils/tools.h"
 
-#include <spdlog/spdlog.h>
-
 using namespace chaonet;
 
 TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAdr)
@@ -24,7 +23,9 @@ TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAdr)
       acceptor_(new Acceptor(loop, listenAdr)),
       threadPool_(new EventLoopThreadPool(loop)),
       started_(false),
-      nextConnId_(1) {
+      nextConnId_(1),
+      connectionCallback_(defaultConnectionCallback),
+      messageCallback_(defaultMessageCallback) {
     acceptor_->setNewConnectionCallback(std::bind(&TcpServer::newConnection,
                                                   this, std::placeholders::_1,
                                                   std::placeholders::_2));
@@ -56,7 +57,8 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     ++nextConnId_;
     std::string connName = name_ + buf;
 
-    SPDLOG_INFO("TcpServer::newConnection [{}] - new connection [{}] from {}", name_, connName, peerAddr.toHostPort());
+    SPDLOG_INFO("TcpServer::newConnection [{}] - new connection [{}] from {}",
+                name_, connName, peerAddr.toHostPort());
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
     auto ioLoop = threadPool_->getNextLoop();
     auto conn = std::make_shared<TcpConnection>(ioLoop, connName, sockfd,
@@ -77,9 +79,11 @@ void TcpServer::removeConnection(const TcpConnectionPtr &conn) {
 
 void TcpServer::removeConnectionInLoop(const TcpConnectionPtr &conn) {
     loop_->assertInLoopThread();
-    SPDLOG_INFO("TcpServer::removeConnectionInLoop [{}] - connection {}", name_, conn->name());
+    SPDLOG_INFO("TcpServer::removeConnectionInLoop [{}] - connection {}", name_,
+                conn->name());
     size_t n = connections_.erase(conn->name());
-    assert(n == 1); (void)n;
-    EventLoop* ioLoop = conn->getLoop();
+    assert(n == 1);
+    (void)n;
+    EventLoop *ioLoop = conn->getLoop();
     ioLoop->queueInLoop(std::bind(&TcpConnection::connectionDestroyed, conn));
 }

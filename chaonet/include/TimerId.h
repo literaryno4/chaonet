@@ -5,15 +5,17 @@
 #ifndef CHAONET_TIMERID_H
 #define CHAONET_TIMERID_H
 
+#include <memory>
+
 namespace chaonet {
 
 class Timer;
 
 class TimerId {
    public:
-    explicit TimerId(Timer* timer = nullptr, int64_t seq = 0)
+    explicit TimerId(std::shared_ptr<Timer> timer = nullptr, int64_t seq = 0)
         : timer_(timer), sequence_(seq) {}
-    Timer* timer() {
+    std::weak_ptr<Timer> timer() {
         return timer_;
     }
     int64_t sequence() {
@@ -21,7 +23,7 @@ class TimerId {
     }
 
    private:
-    Timer* timer_;
+    std::weak_ptr<Timer> timer_;
     int64_t sequence_;
 };
 

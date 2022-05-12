@@ -12,5 +12,6 @@ if (NOT TARGET spdlog)
     find_package(spdlog REQUIRED)
 endif()
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/chaonet)
+add_subdirectory(chaonet)
 add_subdirectory(tests)
+add_subdirectory(examples)

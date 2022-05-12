@@ -63,7 +63,7 @@ void test1() {
     //    server.setConnectionCallback(onConnectionSend);
     //    server.setMessageCallback(onMessage);
     server.setMessageCallback(onMessageSend);
-    server.setWriteCompleteCallback(onWriteComplete);
+//    server.setWriteCompleteCallback(onWriteComplete);
     server.start();
 
     loop.loop();
@@ -84,14 +84,13 @@ void test2(int threadNum) {
         }
     });
     server.setMessageCallback(onMessageSend);
-    server.setThreadNum(threadNum);
     server.start();
 
     loop.loop();
 }
 
 int main() {
-    test2(5);
-
+    spdlog::set_level(spdlog::level::debug);
+    test1();
     return 0;
 };

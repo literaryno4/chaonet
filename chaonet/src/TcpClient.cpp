@@ -25,13 +25,16 @@ void removeConnector(const ConnectorPtr& connector) {}
 }  // namespace detail
 }  // namespace chaonet
 
-TcpClient::TcpClient(EventLoop* loop, const InetAddress& serverAddr)
+TcpClient::TcpClient(EventLoop* loop, const InetAddress& serverAddr,
+                     const std::string& name)
     : loop_(checkNotNUll(loop)),
       connector_(std::make_shared<Connector>(loop, serverAddr)),
       retry_(false),
       connect_(true),
-      nextConnId_(1) {
-    connector_->setNewConnectionCallback(std::bind(&TcpClient::newConnection, this, std::placeholders::_1));
+      nextConnId_(1),
+      name_(name) {
+    connector_->setNewConnectionCallback(
+        std::bind(&TcpClient::newConnection, this, std::placeholders::_1));
     SPDLOG_INFO("TcpClient::TcpClient - connector");
 }
 
@@ -43,7 +46,8 @@ TcpClient::~TcpClient() {
         conn = connection_;
     }
     if (conn) {
-        CloseCallback  cb = std::bind(&detail::removeConnection, loop_, std::placeholders::_1);
+        CloseCallback cb =
+            std::bind(&detail::removeConnection, loop_, std::placeholders::_1);
         loop_->runInLoop(std::bind(&TcpConnection::setCloseCallback, conn, cb));
     } else {
         connector_->stop();
@@ -52,7 +56,8 @@ TcpClient::~TcpClient() {
 }
 
 void TcpClient::connect() {
-    SPDLOG_INFO("TcpClient::connect - connecting to {}", connector_->serverAddress().toHostPort());
+    SPDLOG_INFO("TcpClient::connect - connecting to {}",
+                connector_->serverAddress().toHostPort());
     connect_ = true;
     connector_->start();
 }
@@ -80,11 +85,13 @@ void TcpClient::newConnection(int sockfd) {
     std::string connName = ss.str();
 
     InetAddress localAddr(sockets::getLocalAddr(sockfd));
-    auto conn = std::make_shared<TcpConnection>(loop_, connName, sockfd, localAddr, peerAddr);
+    auto conn = std::make_shared<TcpConnection>(loop_, connName, sockfd,
+                                                localAddr, peerAddr);
     conn->setConnectionCallback(connectionCallback_);
     conn->setMessageCallback(messageCallback_);
     conn->setWriteCompleteCallback(writeCompleteCallback_);
-    conn->setCloseCallback(std::bind(&TcpClient::removeConnection, this, std::placeholders::_1));
+    conn->setCloseCallback(
+        std::bind(&TcpClient::removeConnection, this, std::placeholders::_1));
     {
         std::lock_guard<std::mutex> lock(mutex_);
         connection_ = conn;
@@ -103,8 +110,8 @@ void TcpClient::removeConnection(const TcpConnectionPtr& conn) {
 
     loop_->queueInLoop(std::bind(&TcpConnection::connectionDestroyed, conn));
     if (retry_ && connect_) {
-        SPDLOG_INFO("TcpClient::connect - Reconnecting to {}", connector_->serverAddress().toHostPort());
+        SPDLOG_INFO("TcpClient::connect - Reconnecting to {}",
+                    connector_->serverAddress().toHostPort());
         connector_->restart();
     }
 }
-

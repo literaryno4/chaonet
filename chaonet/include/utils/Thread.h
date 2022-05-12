@@ -9,6 +9,8 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <syscall.h>
+#include <unistd.h>
 
 namespace chaonet {
 
@@ -44,6 +46,10 @@ class Thread {
     std::string name_;
     bool started_;
 };
+
+inline pid_t getTid() {
+    return static_cast<pid_t>(::syscall(SYS_gettid));
+}
 
 }  // namespace chaonet
 #endif  // CHAONET_THREAD_H

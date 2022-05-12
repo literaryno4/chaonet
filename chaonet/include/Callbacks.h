@@ -26,6 +26,9 @@ typedef std::function<void(const TcpConnectionPtr&, Buffer* buf,
     MessageCallback;
 
 
+void defaultConnectionCallback(const TcpConnectionPtr &conn);
+void defaultMessageCallback(const TcpConnectionPtr &, Buffer *buf, Timestamp);
+
 }  // namespace chaonet
 
 #endif  // CHAONET_CALLBACKS_H

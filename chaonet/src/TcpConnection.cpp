@@ -12,6 +12,16 @@
 #include "SocketsOps.h"
 #include "utils/tools.h"
 
+void chaonet::defaultConnectionCallback(const TcpConnectionPtr &conn) {
+    SPDLOG_TRACE("{} -> {} is {}", conn->localAddress().toHostPort(),
+                 conn->peerAddress().toHostPort(),
+                 conn->connected() ? "UP" : "DOWN");
+}
+
+void chaonet::defaultMessageCallback(const TcpConnectionPtr &, Buffer *buf, Timestamp) {
+    buf->retrieveAll();
+}
+
 using namespace chaonet;
 
 TcpConnection::TcpConnection(EventLoop *loop, const std::string &name,
@@ -23,7 +33,9 @@ TcpConnection::TcpConnection(EventLoop *loop, const std::string &name,
       socket_(new Socket(sockfd)),
       channel_(new Channel(loop, sockfd)),
       localAddr_(localAddr),
-      peerAddr_(peerAddr) {
+      peerAddr_(peerAddr),
+      connectionCallback_(defaultConnectionCallback),
+      messageCallback_(defaultMessageCallback) {
     SPDLOG_DEBUG("TcpConnection::constructor[{}],  fd=", name_, sockfd);
     channel_->setReadCallback(
         std::bind(&TcpConnection::handleRead, this, std::placeholders::_1));
@@ -43,6 +55,18 @@ void TcpConnection::send(const std::string &message) {
         } else {
             loop_->runInLoop(
                 std::bind(&TcpConnection::sendInLoop, this, message));
+        }
+    }
+}
+
+void TcpConnection::send(Buffer *buf) {
+    if (state_ == StateE::kConnected) {
+        std::string msg = buf->retrieveAsString();
+        if (loop_->isInLoopThread()) {
+            sendInLoop(msg);
+        } else {
+            auto fp = &TcpConnection::sendInLoop;
+            loop_->runInLoop(std::bind(fp, this, msg));
         }
     }
 }
@@ -153,10 +177,15 @@ void TcpConnection::handleClose() {
                  static_cast<int>(state_));
     assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
     channel_->disableAll();
+
+    TcpConnectionPtr guardThis(shared_from_this());
+    connectionCallback_(guardThis);
+    closeCallback_(guardThis);
 }
 
 void TcpConnection::handleError() {
     char buf[512];
     int err = sockets::getSocketError(channel_->fd());
-    SPDLOG_ERROR("TcpConnection::handleError [{}] - SO_ERROR - {} {}", name_, err, strerror_r(err, buf, 512));
+    SPDLOG_ERROR("TcpConnection::handleError [{}] - SO_ERROR - {} {}", name_,
+                 err, strerror_r(err, buf, 512));
 }

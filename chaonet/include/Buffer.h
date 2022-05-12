@@ -48,6 +48,11 @@ class Buffer {
         return begin() + readerIndex_;
     }
 
+    const char* findCRLF() const {
+        const char* crlf = std::search(peek(), beginWrite(), kCRLF, kCRLF + 2);
+        return crlf == beginWrite() ? nullptr : crlf;
+    }
+
     void retrieve(size_t len) {
         assert(len <= readableBytes());
         readerIndex_ += len;
@@ -142,6 +147,8 @@ class Buffer {
     std::vector<char> buffer_;
     size_t readerIndex_;
     size_t writerIndex_;
+
+    static const char kCRLF[];
 };
 
 }

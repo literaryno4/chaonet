@@ -154,6 +154,7 @@ void Connector::handleError() {
 
 void Connector::retry(int sockfd) {
     sockets::close(sockfd);
+    setStates(States::kDisconnected);
     if (connect_) {
         SPDLOG_INFO(
             "Connector::retry - Retry connecting to {} in {} milliseconds. ",

@@ -79,7 +79,7 @@ TimerId TimerQueue::addTimer(const TimerCallback &cb, Timestamp when,
     TimerPtr timer = std::make_shared<Timer>(cb, when, interval);
     loop_->runInLoop(std::bind(&TimerQueue::addTimerInLoop, this, timer));
 
-    return TimerId(timer.get(), timer->sequence());
+    return TimerId(timer, timer->sequence());
 }
 
 void TimerQueue::cancel(TimerId timerId) {
@@ -108,15 +108,15 @@ void TimerQueue::cancelInLoop(TimerId timerId) {
 
     // correct method is finding the previous shared_ptr and init
     // from that.
-    TimerPtr timerPtr;
-    for (auto &timer : activeTimers_) {
-        if (timer.first.get() == timerId.timer() &&
-            timer.second == timerId.sequence()) {
-            timerPtr = timer.first;
-            break;
-        }
-    }
-    ActiveTimer timer(timerPtr, timerId.sequence());
+//    TimerPtr timerPtr(activeTimers_[std::make_pair<TimerPtr, int64_t>(TimerPtr(timerId.timer()), timerId.sequence())]);
+//    for (auto &timer : activeTimers_) {
+//        if (timer.first.get() == timerId.timer() &&
+//            timer.second == timerId.sequence()) {
+//            timerPtr = timer.first;
+//            break;
+//        }
+//    }
+    ActiveTimer timer(timerId.timer().lock(), timerId.sequence());
 
     ActiveTimerSet::iterator it = activeTimers_.find(timer);
     if (it != activeTimers_.end()) {
