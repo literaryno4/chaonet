@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(chaonet)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 if(EXISTS "/usr/bin/clang")
     set(CMAKE_CXX_COMPILER /usr/bin/clang++)

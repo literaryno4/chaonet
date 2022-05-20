@@ -17,10 +17,10 @@
 
 using namespace chaonet;
 
-TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAdr)
+TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAddr)
     : loop_(checkNotNUll(loop)),
-      name_(listenAdr.toHostPort()),
-      acceptor_(new Acceptor(loop, listenAdr)),
+      name_(listenAddr.toHostPort()),
+      acceptor_(new Acceptor(loop, listenAddr)),
       threadPool_(new EventLoopThreadPool(loop)),
       started_(false),
       nextConnId_(1),

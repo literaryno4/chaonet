@@ -17,10 +17,23 @@ class EventLoopThreadPool;
 
 class TcpServer {
    public:
+
+    enum class Option {
+        kNoReusePort,
+        kReusePort,
+    };
     TcpServer(EventLoop* Loop, const InetAddress& listenAdr);
     ~TcpServer();
 
     void start();
+
+    EventLoop* getLoop() const {
+        return loop_;
+    }
+
+    const std::string& name() const {
+        return name_;
+    }
 
     void setConnectionCallback(const ConnectionCallback& cb) {
         connectionCallback_ = cb;

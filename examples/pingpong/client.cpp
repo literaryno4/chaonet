@@ -69,6 +69,7 @@ class Client {
         : loop_(loop),
           threadPool_(loop),
           sessionCount_(sessionCount),
+          numConnected_(0),
           timeout_(timeout) {
         loop->runAfter(timeout, std::bind(&Client::handleTimeout, this));
         if (threadCount > 1) {

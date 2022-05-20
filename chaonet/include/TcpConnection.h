@@ -6,6 +6,7 @@
 #define CHAONET_TCPCONNECTION_H
 
 #include <string>
+#include <any>
 
 #include "Buffer.h"
 #include "Callbacks.h"
@@ -31,6 +32,18 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     const InetAddress& localAddress() { return localAddr_; }
     const InetAddress& peerAddress() { return peerAddr_; }
     bool connected() const { return state_ == StateE::kConnected; }
+
+    void setContext(const std::any& context) {
+        context_ = context;
+    }
+
+    const std::any& getContext() const {
+        return context_;
+    }
+
+    std::any* getMutableContext() {
+        return &context_;
+    }
 
     void setConnectionCallback(const ConnectionCallback& cb) {
         connectionCallback_ = cb;
@@ -81,6 +94,9 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
     Buffer inputBuffer_;
     Buffer outputBuffer_;
+
+    // C++17
+    std::any context_;
 };
 
 }  // namespace chaonet

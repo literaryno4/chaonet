@@ -2,6 +2,8 @@
 // Created by chao on 2022/3/30.
 //
 
+// in this file, we use RAII object to manage std::thread.
+
 #ifndef CHAONET_THREAD_H
 #define CHAONET_THREAD_H
 
