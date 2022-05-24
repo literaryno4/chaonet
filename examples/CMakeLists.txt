@@ -5,3 +5,5 @@ add_subdirectory(finger)
 add_subdirectory(http)
 
 add_subdirectory(sudoku)
+
+add_subdirectory(filetransfer)

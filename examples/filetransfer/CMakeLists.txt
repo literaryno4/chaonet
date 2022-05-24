@@ -1,0 +1,2 @@
+add_executable(filetransfer_server server.cpp)
+target_link_libraries(filetransfer_server chao_net)

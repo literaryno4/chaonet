@@ -59,6 +59,10 @@ void TcpConnection::send(const std::string &message) {
     }
 }
 
+void TcpConnection::send(const std::string& message, int len) {
+    send(message.substr(0, len));
+}
+
 void TcpConnection::send(Buffer *buf) {
     if (state_ == StateE::kConnected) {
         std::string msg = buf->retrieveAsString();
