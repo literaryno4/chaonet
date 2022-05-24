@@ -12,7 +12,7 @@ using namespace chaonet;
 
 void HttpResponse::appendToBuffer(Buffer* output) const {
     char buf[32];
-    snprintf(buf, sizeof buf, "HTTP/1.1 %d ", statusCode_);
+    snprintf(buf, sizeof buf, "HTTP/1.1 %d ", static_cast<int>(statusCode_));
     output->append(buf);
     output->append(statusMessage_);
     output->append("\r\n");

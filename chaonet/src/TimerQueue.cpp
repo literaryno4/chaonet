@@ -120,13 +120,13 @@ void TimerQueue::cancelInLoop(TimerId timerId) {
 
     ActiveTimerSet::iterator it = activeTimers_.find(timer);
     if (it != activeTimers_.end()) {
-        SPDLOG_DEBUG("erasing timer {}", it->second);
+        spdlog::debug("erasing timer {}", it->second);
         size_t n = timers_.erase(Entry(it->first->expiration(), it->first));
         assert(n == 1);
         (void)n;
         auto itErase = activeTimers_.erase(it);
         assert(itErase != activeTimers_.end());
-        SPDLOG_DEBUG("erased timer {}", it->second);
+        spdlog::debug("erased timer {}", it->second);
     } else if (callingExpiredTimers_) {
         cancelingTimers_.insert(timer);
     }
@@ -140,7 +140,7 @@ void TimerQueue::handleRead() {
     std::vector<Entry> expired = getExpired(now);
 
     callingExpiredTimers_ = true;
-    SPDLOG_DEBUG("clearing canceling Timers, size: {}",
+    spdlog::debug("clearing canceling Timers, size: {}",
                  cancelingTimers_.size());
     cancelingTimers_.clear();
 
@@ -162,7 +162,7 @@ std::vector<TimerQueue::Entry> TimerQueue::getExpired(Timestamp now) {
     timers_.erase(timers_.begin(), it);
 
     for (auto &entry : expired) {
-        SPDLOG_DEBUG("Erasing expired timer...");
+        spdlog::debug("Erasing expired timer...");
         ActiveTimer timer(entry.second, entry.second->sequence());
         size_t n = activeTimers_.erase(timer);
         assert(n == 1);

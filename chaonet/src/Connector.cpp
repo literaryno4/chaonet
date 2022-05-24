@@ -22,11 +22,11 @@ Connector::Connector(EventLoop *loop, const InetAddress &serverAddr)
       connect_(false),
       state_(States::kDisconnected),
       retryDelayMs_(kInitRetryDelayMs) {
-    SPDLOG_DEBUG("ctor[{}]", this);
+    spdlog::debug("ctor[{}]", "Connector");
 }
 
 Connector::~Connector() {
-    SPDLOG_DEBUG("dtor[{}]", this);
+    spdlog::debug("dtor[{}]", "Connector");
     loop_->cancel(timerId_);
     assert(!channel_);
 }
@@ -42,7 +42,7 @@ void Connector::startInLoop() {
     if (connect_) {
         connect();
     } else {
-        SPDLOG_DEBUG("do not connect");
+        spdlog::debug("do not connect");
     }
 }
 
@@ -163,6 +163,6 @@ void Connector::retry(int sockfd) {
                                    std::bind(&Connector::startInLoop, this));
         retryDelayMs_ = std::min(retryDelayMs_ * 2, kMaxRetryDelayMs);
     } else {
-        SPDLOG_DEBUG("do not connect");
+        spdlog::debug("do not connect");
     }
 }

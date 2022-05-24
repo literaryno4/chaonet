@@ -36,7 +36,7 @@ TcpConnection::TcpConnection(EventLoop *loop, const std::string &name,
       peerAddr_(peerAddr),
       connectionCallback_(defaultConnectionCallback),
       messageCallback_(defaultMessageCallback) {
-    SPDLOG_DEBUG("TcpConnection::constructor[{}],  fd=", name_, sockfd);
+    spdlog::debug("TcpConnection::constructor[{}],  fd={}", name_, sockfd);
     channel_->setReadCallback(
         std::bind(&TcpConnection::handleRead, this, std::placeholders::_1));
     channel_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
@@ -45,7 +45,7 @@ TcpConnection::TcpConnection(EventLoop *loop, const std::string &name,
 }
 
 TcpConnection::~TcpConnection() {
-    SPDLOG_DEBUG("TcpConnection::dtor[{}], fd={}", name_, channel_->fd());
+    spdlog::debug("TcpConnection::dtor[{}], fd={}", name_, channel_->fd());
 }
 
 void TcpConnection::send(const std::string &message) {

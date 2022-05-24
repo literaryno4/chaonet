@@ -1,7 +1,6 @@
 //
 // Created by chao on 2022/5/13.
 //
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_OFF
 #include <spdlog/spdlog.h>
 
 #include <iostream>
@@ -18,14 +17,14 @@ extern char favicon[555];
 bool benchmark = false;
 
 void onRequest(const HttpRequest& req, HttpResponse* resp) {
-//    std::cout << "Headers " << req.methodString() << " " << req.path()
-//              << std::endl;
-//    if (!benchmark) {
-//        const std::map<string, string>& headers = req.headers();
-//        for (const auto& header : headers) {
-//            std::cout << header.first << ": " << header.second << std::endl;
-//        }
-//    }
+    std::cout << "Headers " << req.methodString() << " " << req.path()
+              << std::endl;
+    if (!benchmark) {
+        const std::map<string, string>& headers = req.headers();
+        for (const auto& header : headers) {
+            std::cout << header.first << ": " << header.second << std::endl;
+        }
+    }
 
     if (req.path() == "/") {
         resp->setStatusCode(HttpResponse::HttpStatusCode::k200k);
