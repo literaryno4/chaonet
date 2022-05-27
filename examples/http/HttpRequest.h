@@ -14,6 +14,21 @@ using std::string;
 
 namespace chaonet {
 
+const std::unordered_map<string, string> fileType = {
+    {"txt", "text/plain"},
+    {"c", "text/plain"},
+    {"h", "text/plain"},
+    {"html", "text/html"},
+    {"htm", "text/htm"},
+    {"css", "text/css"},
+    {"gif", "image/gif"},
+    {"jpg", "image/jpeg"},
+    {"jpeg", "image/jpeg"},
+    {"png", "image/png"},
+    {"pdf", "application/pdf"},
+    {"ps", "application/postscript"},
+};
+
 class HttpRequest {
    public:
     enum class Method {
@@ -128,6 +143,26 @@ class HttpRequest {
         receiveTime_.swap(that.receiveTime_);
         headers_.swap(that.headers_);
     }
+
+    string getFileType() const {
+        int i;
+        for (i = static_cast<int>(path_.size()) - 1; i >= 0; --i) {
+            if (path_[i] == '.') {
+                break;
+            }
+        }
+        string suffix = path_.substr(i + 1);
+        if (fileType.count(suffix) == 0 || i == 0) {
+            return fileType.at("txt");
+        }
+        return fileType.at(suffix);
+    }
+
+    string getFullFileName() const { return fileRoot_ + path_; }
+    string getFileRoot() const {
+        return fileRoot_;
+    }
+
    private:
     Method method_;
     Version version_;
@@ -135,6 +170,7 @@ class HttpRequest {
     string query_;
     Timestamp receiveTime_;
     std::map<string, string> headers_;
+    string fileRoot_ = "./pages";
 
 };
 }

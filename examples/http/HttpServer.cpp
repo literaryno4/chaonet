@@ -5,6 +5,7 @@
 #include "HttpServer.h"
 
 #include <spdlog/spdlog.h>
+#include <unistd.h>
 
 #include "HttpContext.h"
 #include "HttpResponse.h"
@@ -13,6 +14,8 @@ using namespace chaonet;
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
+
+const int kBufSize = 64*1024;
 
 namespace chaonet {
 
@@ -64,10 +67,41 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn,
                  (req.getVersion() == HttpRequest::Version::kHttp10 &&
                   connection != "Keep-Alive");
     HttpResponse response(close);
-    httpCallback_(req, &response);
-    Buffer buf;
-    response.appendToBuffer(&buf);
-    conn->send(&buf);
+
+    string fileName = req.getFullFileName();
+    SPDLOG_DEBUG("filename: {}", fileName);
+    FILE* fp = ::fopen(fileName.c_str(), "rb");
+    size_t nread = 0;
+    if (fp && fileName != req.getFileRoot()) {
+        response.setStatusCode(HttpResponse::HttpStatusCode::k200k);
+        response.setStatusMessage("OK");
+        response.setContentType(req.getFileType());
+        response.addHeader("Transfer-Encoding", "chunked");
+        response.addHeader("Server", "Chaonet");
+
+        Buffer bufToSend;
+        response.appendToBuffer(&bufToSend);
+        conn->send(&bufToSend);
+
+        char chunck[kBufSize];
+        do {
+            nread = ::fread(chunck, 1, sizeof(chunck), fp);
+            response.setBody(string(chunck, chunck + nread));
+            std::stringstream ss;
+            ss << std::hex << nread;
+            conn->send(ss.str() + "\r\n" );
+            conn->send(string(chunck, chunck + nread) + "\r\n");
+        } while (nread > 0);
+        conn->send("0\r\n" );
+        conn->send("\r\n");
+        ::fclose(fp);
+    } else {
+        httpCallback_(req, &response);
+        Buffer bufToSend;
+        response.appendToBuffer(&bufToSend);
+        conn->send(&bufToSend);
+    }
+
     if (response.closeConnection()) {
         conn->shutdown();
     }

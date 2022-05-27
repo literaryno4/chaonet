@@ -50,6 +50,7 @@ void onRequest(const HttpRequest& req, HttpResponse* resp) {
         resp->setStatusCode(HttpResponse::HttpStatusCode::k404NotFound);
         resp->setStatusMessage("Not Found");
         resp->setCloseConnection(true);
+        resp->setBody("404, NOT FOUND\n");
     }
 }
 
@@ -59,7 +60,7 @@ int main(int argc, const char* argv[]) {
         benchmark = true;
         numThreads = atoi(argv[1]);
     }
-    spdlog::set_level(spdlog::level::off);
+//    spdlog::set_level(spdlog::level::off);
     EventLoop loop;
     HttpServer server(&loop, InetAddress(8000), "dummy");
     server.setHttpCallback(onRequest);
