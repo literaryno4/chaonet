@@ -5,44 +5,35 @@
 #ifndef CHAONET_HTTPREQUEST_H
 #define CHAONET_HTTPREQUEST_H
 
-#include "utils/Timestamp.h"
-#include <map>
 #include <assert.h>
 #include <stdio.h>
+
+#include <map>
+#include <unordered_map>
+
+#include "utils/Timestamp.h"
 
 using std::string;
 
 namespace chaonet {
 
 const std::unordered_map<string, string> fileType = {
-    {"txt", "text/plain"},
-    {"c", "text/plain"},
-    {"h", "text/plain"},
-    {"html", "text/html"},
-    {"htm", "text/htm"},
-    {"css", "text/css"},
-    {"gif", "image/gif"},
-    {"jpg", "image/jpeg"},
-    {"jpeg", "image/jpeg"},
-    {"png", "image/png"},
-    {"pdf", "application/pdf"},
-    {"ps", "application/postscript"},
+    {"txt", "text/plain"},      {"c", "text/plain"},
+    {"h", "text/plain"},        {"html", "text/html"},
+    {"htm", "text/htm"},        {"css", "text/css"},
+    {"gif", "image/gif"},       {"jpg", "image/jpeg"},
+    {"jpeg", "image/jpeg"},     {"png", "image/png"},
+    {"pdf", "application/pdf"}, {"ps", "application/postscript"},
 };
 
 class HttpRequest {
    public:
-    enum class Method {
-        kInvalid, kGet, kPost, kHead, kPut, kDelete
-    };
-    enum class Version {
-        kUnknown, kHttp10, kHttp11
-    };
+    enum class Method { kInvalid, kGet, kPost, kHead, kPut, kDelete };
+    enum class Version { kUnknown, kHttp10, kHttp11 };
 
     HttpRequest() : method_(Method::kInvalid), version_(Version::kUnknown) {}
 
-    void setVersion(Version v) {
-        version_ = v;
-    }
+    void setVersion(Version v) { version_ = v; }
 
     bool setMethod(const char* start, const char* end) {
         assert(method_ == Method::kInvalid);
@@ -63,9 +54,7 @@ class HttpRequest {
         return method_ != Method::kInvalid;
     }
 
-    Method method() const {
-        return method_;
-    }
+    Method method() const { return method_; }
 
     const char* methodString() const {
         const char* result = "UNKNOWN";
@@ -87,27 +76,17 @@ class HttpRequest {
     void setPath(const char* start, const char* end) {
         path_.assign(start, end);
     }
-    const string& path() const {
-        return path_;
-    }
+    const string& path() const { return path_; }
 
     void setQuery(const char* start, const char* end) {
         query_.assign(start, end);
     }
-    const string& query() const {
-        return query_;
-    }
+    const string& query() const { return query_; }
 
-    Version getVersion() const {
-        return version_;
-    }
+    Version getVersion() const { return version_; }
 
-    void setReceiveTime(Timestamp t) {
-        receiveTime_ = t;
-    }
-    Timestamp receiveTime() const {
-        return receiveTime_;
-    }
+    void setReceiveTime(Timestamp t) { receiveTime_ = t; }
+    Timestamp receiveTime() const { return receiveTime_; }
 
     void addHeader(const char* start, const char* colon, const char* end) {
         string field(start, colon);
@@ -131,9 +110,7 @@ class HttpRequest {
         return result;
     }
 
-    const std::map<string, string>& headers() const {
-        return headers_;
-    }
+    const std::map<string, string>& headers() const { return headers_; }
 
     void swap(HttpRequest& that) {
         std::swap(method_, that.method_);
@@ -145,6 +122,9 @@ class HttpRequest {
     }
 
     string getFileType() const {
+        if (path_ == "/") {
+            return fileType.at("html");
+        }
         int i;
         for (i = static_cast<int>(path_.size()) - 1; i >= 0; --i) {
             if (path_[i] == '.') {
@@ -158,11 +138,6 @@ class HttpRequest {
         return fileType.at(suffix);
     }
 
-    string getFullFileName() const { return fileRoot_ + path_; }
-    string getFileRoot() const {
-        return fileRoot_;
-    }
-
    private:
     Method method_;
     Version version_;
@@ -170,9 +145,7 @@ class HttpRequest {
     string query_;
     Timestamp receiveTime_;
     std::map<string, string> headers_;
-    string fileRoot_ = "./pages";
-
 };
-}
+}  // namespace chaonet
 
 #endif  // CHAONET_HTTPREQUEST_H

@@ -17,7 +17,7 @@ class HttpServer {
    public:
     typedef std::function<void(const HttpRequest&, HttpResponse*)> HttpCallback;
     HttpServer(EventLoop* loop, const InetAddress& listenAddr,
-               const std::string& name,
+               const std::string& name, const std::string& pageRoot = "./pages",
                TcpServer::Option option = TcpServer::Option::kNoReusePort);
     EventLoop* getLoop() const { return server_.getLoop(); }
 
@@ -32,8 +32,10 @@ class HttpServer {
     void onMessage(const TcpConnectionPtr& conn, Buffer* buf,
                    Timestamp receiveTime);
     void onRequest(const TcpConnectionPtr&, const HttpRequest&);
+    void sendPageFile(const TcpConnectionPtr&, FILE*);
     TcpServer server_;
     HttpCallback httpCallback_;
+    std::string pageRoot_;
 };
 
 }  // namespace chaonet

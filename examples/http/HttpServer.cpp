@@ -15,7 +15,7 @@ using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
 
-const int kBufSize = 64*1024;
+const int kBufSize = 64 * 1024;
 
 namespace chaonet {
 
@@ -27,8 +27,11 @@ void defaultHttpCallback(const HttpRequest &, HttpResponse *resp) {
 }  // namespace chaonet
 
 HttpServer::HttpServer(EventLoop *loop, const InetAddress &listenAddr,
-                       const std::string &name, TcpServer::Option option)
-    : server_(loop, listenAddr), httpCallback_(defaultHttpCallback) {
+                       const std::string &name, const std::string& pageRoot,
+                       TcpServer::Option option)
+    : server_(loop, listenAddr),
+      httpCallback_(defaultHttpCallback),
+      pageRoot_(pageRoot) {
     server_.setConnectionCallback(
         std::bind(&HttpServer::onConnection, this, _1));
     server_.setMessageCallback(
@@ -48,7 +51,8 @@ void HttpServer::onConnection(const TcpConnectionPtr &conn) {
 
 void HttpServer::onMessage(const TcpConnectionPtr &conn, Buffer *buf,
                            Timestamp receiveTime) {
-    HttpContext *context = std::any_cast<HttpContext>(conn->getMutableContext());
+    HttpContext *context =
+        std::any_cast<HttpContext>(conn->getMutableContext());
     if (!context->parseRequest(buf, receiveTime)) {
         conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
         conn->shutdown();
@@ -68,36 +72,23 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn,
                   connection != "Keep-Alive");
     HttpResponse response(close);
 
-    string fileName = req.getFullFileName();
+    string fileName = pageRoot_ + (req.path() == "/" ? "/index.html" : req.path());
     SPDLOG_DEBUG("filename: {}", fileName);
-    FILE* fp = ::fopen(fileName.c_str(), "rb");
-    size_t nread = 0;
-    if (fp && fileName != req.getFileRoot()) {
+    FILE *fp = ::fopen(fileName.c_str(), "rb");
+    Buffer bufToSend;
+    if (fp) {
         response.setStatusCode(HttpResponse::HttpStatusCode::k200k);
         response.setStatusMessage("OK");
         response.setContentType(req.getFileType());
         response.addHeader("Transfer-Encoding", "chunked");
         response.addHeader("Server", "Chaonet");
 
-        Buffer bufToSend;
         response.appendToBuffer(&bufToSend);
         conn->send(&bufToSend);
 
-        char chunck[kBufSize];
-        do {
-            nread = ::fread(chunck, 1, sizeof(chunck), fp);
-            response.setBody(string(chunck, chunck + nread));
-            std::stringstream ss;
-            ss << std::hex << nread;
-            conn->send(ss.str() + "\r\n" );
-            conn->send(string(chunck, chunck + nread) + "\r\n");
-        } while (nread > 0);
-        conn->send("0\r\n" );
-        conn->send("\r\n");
-        ::fclose(fp);
+        sendPageFile(conn, fp);
     } else {
         httpCallback_(req, &response);
-        Buffer bufToSend;
         response.appendToBuffer(&bufToSend);
         conn->send(&bufToSend);
     }
@@ -105,4 +96,22 @@ void HttpServer::onRequest(const TcpConnectionPtr &conn,
     if (response.closeConnection()) {
         conn->shutdown();
     }
+
+    if (fp) {
+        ::fclose(fp);
+    }
+}
+
+void HttpServer::sendPageFile(const TcpConnectionPtr &conn, FILE* fp) {
+    size_t nread = 0;
+    char chunck[kBufSize];
+    do {
+        nread = ::fread(chunck, 1, sizeof(chunck), fp);
+        std::stringstream ss;
+        ss << std::hex << nread;
+        conn->send(ss.str() + "\r\n");
+        conn->send(string(chunck, chunck + nread) + "\r\n");
+    } while (nread > 0);
+    conn->send("0\r\n");
+    conn->send("\r\n");
 }
