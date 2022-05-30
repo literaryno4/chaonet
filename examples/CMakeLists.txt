@@ -8,4 +8,4 @@ add_subdirectory(sudoku)
 
 add_subdirectory(filetransfer)
 
-add_subdirectory(protobuf)
+add_subdirectory(protobuftoy)

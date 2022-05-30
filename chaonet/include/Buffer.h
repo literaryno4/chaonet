@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <assert.h>
 #include <iostream>
+#include <string.h>
+
+#include "SocketsOps.h"
 
 namespace chaonet {
 
@@ -46,6 +49,13 @@ class Buffer {
 
     const char* peek() const {
         return begin() + readerIndex_;
+    }
+
+    int32_t peekInt32() const {
+        assert(readableBytes() >= sizeof(int32_t));
+        int32_t be32 = 0;
+        ::memcpy(&be32, peek(), sizeof(be32));
+        return sockets::networkToHost32(be32);
     }
 
     const char* findCRLF() const {
@@ -87,6 +97,11 @@ class Buffer {
 
     void append(const void* data, size_t len) {
         append(static_cast<const char*>(data), len);
+    }
+
+    void appendInt32(int32_t x) {
+        int32_t be32 = sockets::hostToNetwork32(x);
+        append(&be32, sizeof(be32));
     }
 
     void ensureWritableBytes(size_t len) {

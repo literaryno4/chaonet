@@ -1,3 +1,5 @@
+examples/protobuf/*
 cmake-*
+build
 .idea*
 .DS_Store

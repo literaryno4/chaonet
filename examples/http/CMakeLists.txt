@@ -2,7 +2,7 @@ set(http_SRCS
         HttpServer.cpp
         HttpResponse.cpp
         HttpContext.cpp
-        )
+        ../protobuf/ProtobufCodecLite.cpp ../protobuf/ProtobufCodecLite.h)
 
 add_library(chao_http ${http_SRCS})
 target_link_libraries(chao_http chao_net)
