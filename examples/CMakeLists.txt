@@ -9,3 +9,5 @@ add_subdirectory(sudoku)
 add_subdirectory(filetransfer)
 
 add_subdirectory(protobuftoy)
+
+add_subdirectory(timer)

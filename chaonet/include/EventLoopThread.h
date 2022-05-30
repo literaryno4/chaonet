@@ -17,6 +17,8 @@ class EventLoopThread {
    public:
     EventLoopThread();
     EventLoopThread(const EventLoopThread&) = delete;
+    EventLoopThread& operator=(const EventLoopThread&) = delete;
+
     ~EventLoopThread();
     EventLoop* startLoop();
 

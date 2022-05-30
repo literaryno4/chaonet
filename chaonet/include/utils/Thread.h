@@ -22,7 +22,9 @@ class Thread {
     explicit Thread(ThreadFunc threadFunc, std::string name = std::string())
         : threadFunc_(std::move(threadFunc)), name_(std::move(name)), started_(false) {}
     ~Thread() {
-        thread_.detach();
+        if (thread_.joinable()) {
+            thread_.join();
+        }
     }
     void start() {
         if (!started()) {
