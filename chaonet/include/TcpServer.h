@@ -22,7 +22,7 @@ class TcpServer {
         kNoReusePort,
         kReusePort,
     };
-    TcpServer(EventLoop* Loop, const InetAddress& listenAdr);
+    TcpServer(EventLoop* Loop, const InetAddress& listenAdr, const std::string& name = "");
     ~TcpServer();
 
     void start();

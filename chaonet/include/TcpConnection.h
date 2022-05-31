@@ -54,7 +54,21 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     void setWriteCompleteCallback(const WriteCompleteCallback& cb) {
         writeCompleteCallback_ = cb;
     }
+    void setHighWaterMarkCallback(const HighWaterMarkCallback & cb, size_t highWaterMark) {
+        highWaterMarkCallback_ = cb;
+        highWaterMark_ = highWaterMark;
+    }
     void setCloseCallback(const CloseCallback& cb) { closeCallback_ = cb; }
+
+    Buffer* inputBuffer() {
+        return &inputBuffer_;
+    }
+    Buffer* outputBuffer() {
+        return &outputBuffer_;
+    }
+    bool isReading() const {
+        return reading_;
+    }
 
     void connectionEstablished();
     void connectionDestroyed();
@@ -62,15 +76,17 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     void send(const std::string& message);
     void send(const std::string& message, int len);
     void send(Buffer* buf);
+    void startRead();
+    void stopRead();
     void shutdown();
     void setTcpNoDelay(bool on);
 
    private:
     enum class StateE {
-        kConnecting,
-        kConnected,
-        kDisconnecting,
-        kDisconnected
+        kConnecting = 0,
+        kConnected = 1,
+        kDisconnecting = 2,
+        kDisconnected = 3
     };
 
     void setState(StateE s) { state_ = s; }
@@ -79,11 +95,14 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     void handleClose();
     void handleError();
     void sendInLoop(const std::string& message);
+    void startReadInLoop();
+    void stopReadInLoop();
     void shutdownInLoop();
 
     EventLoop* loop_;
     std::string name_;
     StateE state_;
+    bool reading_;
     std::unique_ptr<Socket> socket_;
     std::unique_ptr<Channel> channel_;
     InetAddress localAddr_;
@@ -91,7 +110,9 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     ConnectionCallback connectionCallback_;
     MessageCallback messageCallback_;
     WriteCompleteCallback writeCompleteCallback_;
+    HighWaterMarkCallback highWaterMarkCallback_;
     CloseCallback closeCallback_;
+    size_t highWaterMark_;
 
     Buffer inputBuffer_;
     Buffer outputBuffer_;

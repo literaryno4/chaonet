@@ -4,8 +4,11 @@
 
 #include "InetAddress.h"
 
+#include <spdlog/spdlog.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <strings.h>
+#include <string.h>
 
 #include "SocketsOps.h"
 
@@ -30,4 +33,26 @@ std::string InetAddress::toHostPort() const {
     char buf[32];
     sockets::toHostPort(buf, sizeof(buf), addr_);
     return buf;
+}
+
+static __thread char t_resolveBuffer[64* 1024];
+
+bool InetAddress::resolve(std::string hostname, InetAddress *out) {
+    assert(out != nullptr);
+    struct hostent hent;
+    struct hostent* he = nullptr;
+    int herrno = 0;
+    memset(&hent, 0, sizeof(hent));
+
+    int ret = gethostbyname_r(hostname.c_str(), &hent, t_resolveBuffer, sizeof(t_resolveBuffer), &he, &herrno);
+    if (ret == 0 && he != nullptr) {
+        assert(he->h_addrtype == AF_INET && he->h_length == sizeof(uint32_t));
+        out->addr_.sin_addr = *reinterpret_cast<struct in_addr*>(he->h_addr);
+        return true;
+    } else {
+        if (ret) {
+            SPDLOG_ERROR("InetAddress::resolve");
+        }
+        return false;
+    }
 }

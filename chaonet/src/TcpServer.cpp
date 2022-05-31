@@ -17,9 +17,9 @@
 
 using namespace chaonet;
 
-TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAddr)
+TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAddr, const std::string& nameArg)
     : loop_(checkNotNUll(loop)),
-      name_(listenAddr.toHostPort()),
+      name_(nameArg),
       acceptor_(new Acceptor(loop, listenAddr)),
       threadPool_(new EventLoopThreadPool(loop)),
       started_(false),

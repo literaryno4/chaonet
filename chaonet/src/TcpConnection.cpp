@@ -30,10 +30,12 @@ TcpConnection::TcpConnection(EventLoop *loop, const std::string &name,
     : loop_(checkNotNUll(loop)),
       name_(name),
       state_(StateE::kConnecting),
+      reading_(true),
       socket_(new Socket(sockfd)),
       channel_(new Channel(loop, sockfd)),
       localAddr_(localAddr),
       peerAddr_(peerAddr),
+      highWaterMark_(64*1024*1024),
       connectionCallback_(defaultConnectionCallback),
       messageCallback_(defaultMessageCallback) {
     spdlog::debug("TcpConnection::constructor[{}],  fd={}", name_, sockfd);
@@ -78,6 +80,7 @@ void TcpConnection::send(Buffer *buf) {
 void TcpConnection::sendInLoop(const std::string &message) {
     loop_->assertInLoopThread();
     ssize_t nwrote = 0;
+
     if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0) {
         nwrote = ::write(channel_->fd(), message.data(), message.size());
         if (nwrote >= 0) {
@@ -96,10 +99,44 @@ void TcpConnection::sendInLoop(const std::string &message) {
     }
     assert(nwrote >= 0);
     if (static_cast<size_t>(nwrote) < message.size()) {
+        size_t oldLen = outputBuffer_.readableBytes();
+        if (oldLen + (message.size() - nwrote) >= highWaterMark_ && oldLen < highWaterMark_ && highWaterMarkCallback_) {
+            loop_->queueInLoop(std::bind(highWaterMarkCallback_, shared_from_this(), oldLen + (message.size() - nwrote)));
+        }
         outputBuffer_.append(message.data() + nwrote, message.size() - nwrote);
         if (!channel_->isWriting()) {
             channel_->enableWriting();
         }
+    }
+}
+
+void TcpConnection::startRead()
+{
+    loop_->runInLoop(std::bind(&TcpConnection::startReadInLoop, this));
+}
+
+void TcpConnection::startReadInLoop()
+{
+    loop_->assertInLoopThread();
+    if (!reading_ || !channel_->isReading())
+    {
+        channel_->enableReading();
+        reading_ = true;
+    }
+}
+
+void TcpConnection::stopRead()
+{
+    loop_->runInLoop(std::bind(&TcpConnection::stopReadInLoop, this));
+}
+
+void TcpConnection::stopReadInLoop()
+{
+    loop_->assertInLoopThread();
+    if (reading_ || channel_->isReading())
+    {
+        channel_->disableReading();
+        reading_ = false;
     }
 }
 
@@ -113,10 +150,13 @@ void TcpConnection::connectionEstablished() {
 
 void TcpConnection::connectionDestroyed() {
     loop_->assertInLoopThread();
-    assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
-    setState(StateE::kDisconnected);
-    channel_->disableAll();
-    connectionCallback_(shared_from_this());
+    if (state_ == StateE::kConnected) {
+//        assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
+        setState(StateE::kDisconnected);
+        channel_->disableAll();
+
+        connectionCallback_(shared_from_this());
+    }
     loop_->removeChannel(channel_.get());
 }
 
@@ -177,9 +217,10 @@ void TcpConnection::handleWrite() {
 
 void TcpConnection::handleClose() {
     loop_->assertInLoopThread();
-    SPDLOG_TRACE("TcpConnection::handleClose state = {}",
+    spdlog::debug("TcpConnection::handleClose state = {}",
                  static_cast<int>(state_));
-    assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
+    assert((state_ == StateE::kConnected) || (state_ == StateE::kDisconnecting));
+    setState(StateE::kDisconnected);
     channel_->disableAll();
 
     TcpConnectionPtr guardThis(shared_from_this());
