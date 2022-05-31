@@ -11,3 +11,5 @@ add_subdirectory(filetransfer)
 add_subdirectory(protobuftoy)
 
 add_subdirectory(timer)
+
+add_subdirectory(discard)
