@@ -76,7 +76,7 @@ void onServerMessage(const TcpConnectionPtr& conn, Buffer* buf, Timestamp) {
                     char response[] = "\000\x5aUVWXYZ";
                     memcpy(response+2, &addr.sin_port, 2);
                     memcpy(response+4, &addr.sin_addr.s_addr, 4);
-                    conn->send(response, 8);
+                    conn->send(std::string(response, response + 8));
                 } else {
                     char response[] = "\000\x5bUVWXYZ";
                     conn->send(response, 8);

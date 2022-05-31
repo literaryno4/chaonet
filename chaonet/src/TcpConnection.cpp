@@ -18,7 +18,8 @@ void chaonet::defaultConnectionCallback(const TcpConnectionPtr &conn) {
                  conn->connected() ? "UP" : "DOWN");
 }
 
-void chaonet::defaultMessageCallback(const TcpConnectionPtr &, Buffer *buf, Timestamp) {
+void chaonet::defaultMessageCallback(const TcpConnectionPtr &, Buffer *buf,
+                                     Timestamp) {
     buf->retrieveAll();
 }
 
@@ -35,7 +36,7 @@ TcpConnection::TcpConnection(EventLoop *loop, const std::string &name,
       channel_(new Channel(loop, sockfd)),
       localAddr_(localAddr),
       peerAddr_(peerAddr),
-      highWaterMark_(64*1024*1024),
+      highWaterMark_(64 * 1024 * 1024),
       connectionCallback_(defaultConnectionCallback),
       messageCallback_(defaultMessageCallback) {
     spdlog::debug("TcpConnection::constructor[{}],  fd={}", name_, sockfd);
@@ -61,8 +62,8 @@ void TcpConnection::send(const std::string &message) {
     }
 }
 
-void TcpConnection::send(const std::string& message, int len) {
-    send(message.substr(0, len));
+void TcpConnection::send(const char *message, int len) {
+    send(std::string(message, message + len));
 }
 
 void TcpConnection::send(Buffer *buf) {
@@ -100,8 +101,11 @@ void TcpConnection::sendInLoop(const std::string &message) {
     assert(nwrote >= 0);
     if (static_cast<size_t>(nwrote) < message.size()) {
         size_t oldLen = outputBuffer_.readableBytes();
-        if (oldLen + (message.size() - nwrote) >= highWaterMark_ && oldLen < highWaterMark_ && highWaterMarkCallback_) {
-            loop_->queueInLoop(std::bind(highWaterMarkCallback_, shared_from_this(), oldLen + (message.size() - nwrote)));
+        if (oldLen + (message.size() - nwrote) >= highWaterMark_ &&
+            oldLen < highWaterMark_ && highWaterMarkCallback_) {
+            loop_->queueInLoop(std::bind(highWaterMarkCallback_,
+                                         shared_from_this(),
+                                         oldLen + (message.size() - nwrote)));
         }
         outputBuffer_.append(message.data() + nwrote, message.size() - nwrote);
         if (!channel_->isWriting()) {
@@ -110,31 +114,25 @@ void TcpConnection::sendInLoop(const std::string &message) {
     }
 }
 
-void TcpConnection::startRead()
-{
+void TcpConnection::startRead() {
     loop_->runInLoop(std::bind(&TcpConnection::startReadInLoop, this));
 }
 
-void TcpConnection::startReadInLoop()
-{
+void TcpConnection::startReadInLoop() {
     loop_->assertInLoopThread();
-    if (!reading_ || !channel_->isReading())
-    {
+    if (!reading_ || !channel_->isReading()) {
         channel_->enableReading();
         reading_ = true;
     }
 }
 
-void TcpConnection::stopRead()
-{
+void TcpConnection::stopRead() {
     loop_->runInLoop(std::bind(&TcpConnection::stopReadInLoop, this));
 }
 
-void TcpConnection::stopReadInLoop()
-{
+void TcpConnection::stopReadInLoop() {
     loop_->assertInLoopThread();
-    if (reading_ || channel_->isReading())
-    {
+    if (reading_ || channel_->isReading()) {
         channel_->disableReading();
         reading_ = false;
     }
@@ -151,7 +149,8 @@ void TcpConnection::connectionEstablished() {
 void TcpConnection::connectionDestroyed() {
     loop_->assertInLoopThread();
     if (state_ == StateE::kConnected) {
-//        assert(state_ == StateE::kConnected || state_ == StateE::kDisconnecting);
+        //        assert(state_ == StateE::kConnected || state_ ==
+        //        StateE::kDisconnecting);
         setState(StateE::kDisconnected);
         channel_->disableAll();
 
@@ -218,8 +217,9 @@ void TcpConnection::handleWrite() {
 void TcpConnection::handleClose() {
     loop_->assertInLoopThread();
     spdlog::debug("TcpConnection::handleClose state = {}",
-                 static_cast<int>(state_));
-    assert((state_ == StateE::kConnected) || (state_ == StateE::kDisconnecting));
+                  static_cast<int>(state_));
+    assert((state_ == StateE::kConnected) ||
+           (state_ == StateE::kDisconnecting));
     setState(StateE::kDisconnected);
     channel_->disableAll();
 
