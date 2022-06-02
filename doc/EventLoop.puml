@@ -2,12 +2,13 @@
 'https://plantuml.com/class-diagram
 
 EventLoop *-- Poller
-EventLoop *-- Channel
+EventLoop o-- Channel
 EventLoop "add timers" *-- TimerQueue
 Poller - Channel : wait events >
 TimerQueue - Channel : registry >
 
 class Channel {
+    - fd_: File Descriptor
     + handleEvent()
 }
 

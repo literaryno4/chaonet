@@ -1,0 +1,73 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+title overview of chaonet(white class is user-visible)
+
+EventLoop *-- Poller
+EventLoop o-- Channel
+TcpConnection *-- Channel
+TcpConnection *-- Socket
+Acceptor *-- Channel
+Acceptor *-- Socket
+Connector *-- Channel
+TcpServer o-- TcpConnection
+TcpClient o-- TcpConnection
+TcpServer *-- Acceptor
+TcpClient *-- Connector
+
+class TcpConnection #fff {
+    - handleRead()
+    - handleWrite()
+    - handleClose()
+    - handleError()
+}
+
+class EventLoop #fff {
+    - vector<functor> pendingFunctors
+    + loop()
+    + updateChannel()
+    + runInLoop()
+    + queueInLoop()
+    + runAt()
+    + runAfter()
+    + runEvery()
+}
+
+class TcpServer #fff {
+    + setConnectionCallback()
+    + setMessageCallback()
+}
+
+class TcpClient #fff {
+    + setConnectionCallback()
+    + setMessageCallback()
+}
+
+class Acceptor {
+    - handleRead()
+}
+
+class Connector {
+    - handleWrite()
+    - handleError()
+}
+
+class Channel #fff {
+    - fd_: File Descriptor
+    + handleEvent()
+}
+
+class Poller {
+    - pollFds_
+    + poll()
+    + updateChannel()
+    + removeChannel()
+}
+
+class Socket {
+    + bindAddress()
+    + listen()
+    + Accept()
+}
+
+@enduml

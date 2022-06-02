@@ -1,0 +1,98 @@
+@startuml
+
+title connect && message && close
+
+
+user -> EventLoop : loop()
+activate EventLoop
+
+EventLoop -> Poller : poll()
+activate Poller
+
+Poller -> Poller : fillActiveChannels()
+Poller --> EventLoop : active Channels
+deactivate Poller
+
+EventLoop -> Channel : handleEvent()
+activate Channel
+
+Channel -> Acceptor : handleRead()
+activate Acceptor
+
+Acceptor -> Acceptor : accept(2)
+Acceptor -> TcpServer : newConn()
+activate TcpServer
+
+TcpServer --> TcpConnection : create
+activate TcpConnection
+
+TcpServer -> TcpConnection : established()
+TcpConnection -> user : connectionCallback()
+deactivate TcpConnection
+deactivate TcpServer
+deactivate Acceptor
+deactivate Channel
+
+note right : on connection
+
+box "Message"
+user -> EventLoop : loop()
+
+EventLoop -> Poller : poll()
+activate Poller
+
+Poller -> Poller : fillActiveChannels()
+
+Poller --> EventLoop : active Channels
+deactivate Poller
+
+EventLoop -> Channel : handleEvent()
+activate Channel
+
+Channel -> TcpConnection : handleRead()
+activate TcpConnection
+
+TcpConnection -> TcpConnection : handleWrite()
+TcpConnection -> user : messageCallback()
+deactivate TcpConnection
+deactivate Channel
+
+note right : on message
+
+user -> EventLoop : loop()
+
+EventLoop -> Poller : poll()
+activate Poller
+
+Poller -> Poller : fillActiveChannels()
+
+Poller --> EventLoop : active Channels
+deactivate Poller
+
+EventLoop -> Channel : handleEvent()
+activate Channel
+
+Channel -> TcpConnection : handleRead()
+activate TcpConnection
+
+TcpConnection -> TcpConnection : handleClose()
+TcpConnection -> TcpServer : removeConn()
+activate TcpServer
+
+TcpServer -> TcpServer : erase()
+TcpServer -> EventLoop : queueInLoop()
+deactivate TcpServer
+deactivate TcpConnection
+deactivate Channel
+
+EventLoop -> EventLoop : pendFunctors()
+EventLoop -> TcpConnection : connectDestroyed()
+activate TcpConnection
+
+TcpConnection -> user : connectionCallback()
+deactivate TcpConnection
+destroy TcpConnection
+
+note right : close
+
+@enduml
