@@ -20,8 +20,8 @@ using namespace chaonet;
 TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAddr, const std::string& nameArg)
     : loop_(checkNotNUll(loop)),
       name_(nameArg),
-      acceptor_(new Acceptor(loop, listenAddr)),
-      threadPool_(new EventLoopThreadPool(loop)),
+      acceptor_(std::make_unique<Acceptor>(loop, listenAddr)),
+      threadPool_(std::make_unique<EventLoopThreadPool>(loop)),
       started_(false),
       nextConnId_(1),
       connectionCallback_(defaultConnectionCallback),

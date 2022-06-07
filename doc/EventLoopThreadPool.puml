@@ -1,0 +1,28 @@
+@startuml
+
+actor Actor as user
+
+user -> Base_IO_Thread : conn 1 established
+activate Base_IO_Thread
+Base_IO_Thread -> IO_Thread_1 : accept assign
+activate IO_Thread_1
+IO_Thread_1 -> IO_Thread_1 : read/write
+deactivate Base_IO_Thread
+
+user -> Base_IO_Thread : conn 2 established
+activate Base_IO_Thread
+Base_IO_Thread -> IO_Thread_2 : accept assign
+activate IO_Thread_2
+IO_Thread_2 -> IO_Thread_2 : read/write
+deactivate Base_IO_Thread
+
+user -> Base_IO_Thread : conn 3 established
+activate Base_IO_Thread
+deactivate IO_Thread_1
+Base_IO_Thread -> IO_Thread_1 : accept assign
+activate IO_Thread_1
+IO_Thread_1 -> IO_Thread_1 : read/write
+deactivate Base_IO_Thread
+
+
+@enduml
